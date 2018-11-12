@@ -28,7 +28,7 @@ test() {
         (( keep = 10#${retention[leafs]} > 0, retention[leafs]-- ))
 
         # check retention when the day has changed wrt previous snapshot
-        (( 10#${cd} != 10#${d} && (cd = 10#${d}, keep |= 10#${retention[days]} > 0, retention[days]--) ))
+        (( 10#$cd != 10#$d && (cd = 10#$d, keep |= 10#${retention[days]} > 0, retention[days]--) ))
 
         # if the week day is more than 6 days before the previous last day of week,
         # the week has changed wrt previous snapshot, so check week retention
@@ -41,10 +41,10 @@ test() {
         cw=$(date -d "$y/$m/$d -$dow days +$weekstart day" +"%F")
 
         # month retention
-        (( 10#${cm} != 10#${m} && (cm = 10#${m}, keep |= 10#${retention[months]} > 0, retention[months]-- ) ))
+        (( 10#$cm != 10#$m && (cm = 10#$m, keep |= 10#${retention[months]} > 0, retention[months]-- ) ))
 
         # year retention
-        (( 10#${cy} != 10#${y} && (cy = 10#${y}, keep |= 10#${retention[years]} > 0, retention[years]-- ) ))
+        (( 10#$cy != 10#$y && (cy = 10#$y, keep |= 10#${retention[years]} > 0, retention[years]-- ) ))
 
         echo -n "$y/$m/$d/$s"
         if (( keep )); then
