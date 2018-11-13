@@ -12,7 +12,7 @@ sources+=('/var/lib/libvirt/images')
 # btrfs volume for the backup, you should let this script create it
 destination='/media/user/BKP/snaps'
 
-# snapshots to keep per level (min=1), snapshots may evaluate to many levels
+# snapshots to keep per level (min=0), snapshots may evaluate to many levels
 declare -A retention=( [leafs]=15 [days]=7 [weeks]=8 [months]=6 [years]=2 )
 
 # 1=mon, 7=sun - used in the weekly retention checks
