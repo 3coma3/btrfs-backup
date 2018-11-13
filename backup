@@ -59,31 +59,29 @@ _snap() {
 _clean() {
     echo -e "\nCLEANING UP ===="
 
-    local y m d s cd=0 cw=0 cm=0 cy=0 dow keep=false cleaned=0 rest
+    local y m d s cd=0 cw=0 cm=0 cy=0 dow clean=false cleaned=0 rest str
     while IFS='/' read rest y m d s; do
         # check retention over leaf snapshot counter
-        (( keep = 10#${retention[leafs]} > 0, retention[leafs]-- ))
+        (( clean = retention[leafs]-- < 1 ))
 
         # check retention when the day has changed
-        (( 10#$cd != 10#$d && (cd = 10#$d, keep |= 10#${retention[days]} > 0, retention[days]--) ))
+        (( 10#$cd != 10#$d && (cd = 10#$d, clean &= retention[days]-- < 1) ))
 
-        # if we are more than 6 days before the saved last day of week (cw)
+        # if we are more than 6 days before the previous last day of week (cw),
         # the week has changed, so check week retention
-        if [[ "$cw" == "0" ]] || (( $(date -d "$cw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )); then
-            (( keep |= 10#${retention[weeks]} > 0, retention[weeks]-- ))
-        fi
+        [[ "$cw" == "0" ]] || (( $(date -d "$cw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
+        && (( clean &= retention[weeks]-- < 1 ))
 
         # get last day for the week of the snapshot
-        dow=$(date -d $y/$m/$d +%u)
-        cw=$(date -d "$y/$m/$d -$dow days +$weekstart day" +"%F")
+        cw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +"%F")
 
         # month retention
-        (( 10#$cm != 10#$m && (cm = 10#$m, keep |= 10#${retention[months]} > 0, retention[months]--) ))
+        (( 10#$cm != 10#$m && (cm = 10#$m, clean &= retention[months]-- < 1) ))
 
         # year retention
-        (( 10#$cy != 10#$y && (cy = 10#$y, keep |= 10#${retention[years]} > 0, retention[years]--) ))
+        (( 10#$cy != 10#$y && (cy = 10#$y, clean &= retention[years]-- < 1) ))
 
-        (( keep )) || {
+        (( clean )) && {
             $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
@@ -96,7 +94,7 @@ _clean() {
         }
     done< <(cd "$destination" ; find . -maxdepth 4 -mindepth 4 -type d | sort -dr)
 
-    local str=" was" ; (( cleaned != 1 )) && str="s were"
+    (( cleaned == 1 )) && str=" was" || str="s were" 
     echo "$cleaned snapshot$str cleaned."
 }
 
