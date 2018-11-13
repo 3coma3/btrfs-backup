@@ -18,7 +18,7 @@ declare -A retention=( [leafs]=15 [days]=7 [weeks]=8 [months]=6 [years]=2 )
 # 1=mon, 7=sun - used in the weekly retention checks
 weekstart=7
 
-# can be set by passing -d on the command line, or set to ex. 'echo' here
+# can be set by passing -d on the command line, or hardcode here to ex. 'echo'
 dryrun=''
 
 # CONFIG END -------------------------------------------------------------------
@@ -59,16 +59,16 @@ _snap() {
 _clean() {
     echo -e "\nCLEANING UP ===="
 
-    local cd=0 cw=0 cm=0 cy=0 dow keep=false cleaned=0 rest
+    local y m d s cd=0 cw=0 cm=0 cy=0 dow keep=false cleaned=0 rest
     while IFS='/' read rest y m d s; do
         # check retention over leaf snapshot counter
         (( keep = 10#${retention[leafs]} > 0, retention[leafs]-- ))
 
-        # check retention when the day has changed wrt previous snapshot
+        # check retention when the day has changed
         (( 10#$cd != 10#$d && (cd = 10#$d, keep |= 10#${retention[days]} > 0, retention[days]--) ))
 
-        # if the week day is more than 6 days before the previous last day of week,
-        # the week has changed wrt previous snapshot, so check week retention
+        # if we are more than 6 days before the saved last day of week (cw)
+        # the week has changed, so check week retention
         if [[ "$cw" == "0" ]] || (( $(date -d "$cw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )); then
             (( keep |= 10#${retention[weeks]} > 0, retention[weeks]-- ))
         fi
@@ -78,15 +78,16 @@ _clean() {
         cw=$(date -d "$y/$m/$d -$dow days +$weekstart day" +"%F")
 
         # month retention
-        (( 10#$cm != 10#$m && (cm = 10#$m, keep |= 10#${retention[months]} > 0, retention[months]-- ) ))
+        (( 10#$cm != 10#$m && (cm = 10#$m, keep |= 10#${retention[months]} > 0, retention[months]--) ))
 
         # year retention
-        (( 10#$cy != 10#$y && (cy = 10#$y, keep |= 10#${retention[years]} > 0, retention[years]-- ) ))
+        (( 10#$cy != 10#$y && (cy = 10#$y, keep |= 10#${retention[years]} > 0, retention[years]--) ))
 
         (( keep )) || {
             $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
+            # output will be inaccurate in dry mode as we can't remove parents
             for dir in "$destination/"{$y/$m/$d,$y/$m,$y}; do
                 [[ -z "$(ls -A "$dir")" ]] && $dryrun rmdir -v "$dir"
             done

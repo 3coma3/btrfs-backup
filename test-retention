@@ -22,16 +22,16 @@ generate() {
 test() {
     echo -e "\nCLEANING UP ===="
 
-    local cd=0 cw=0 cm=0 cy=0 dow keep=false cleaned=0 rest
+    local y m d s cd=0 cw=0 cm=0 cy=0 dow keep=false cleaned=0 rest
     while IFS='/' read rest y m d s; do
         # check retention over leaf snapshot counter
         (( keep = 10#${retention[leafs]} > 0, retention[leafs]-- ))
 
-        # check retention when the day has changed wrt previous snapshot
+        # check retention when the day has changed
         (( 10#$cd != 10#$d && (cd = 10#$d, keep |= 10#${retention[days]} > 0, retention[days]--) ))
 
-        # if the week day is more than 6 days before the previous last day of week,
-        # the week has changed wrt previous snapshot, so check week retention
+        # if we are more than 6 days before the saved last day of week (cw)
+        # the week has changed, so check week retention
         if [[ "$cw" == "0" ]] || (( $(date -d "$cw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )); then
             (( keep |= 10#${retention[weeks]} > 0, retention[weeks]-- ))
         fi
