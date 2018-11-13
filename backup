@@ -6,7 +6,7 @@
 declare -a sources=()
 sources+=('/etc')
 sources+=('/home/user/'{b*,d*,m*,p*,s*,t*,v*,wo*})
-sources+=('/home/user/'.{bash,cinnamon,config,dmrc,fzf*,g{conf,i{mp,t*},n{ome,upg},tkrc*},icons,l{inuxmint,ocal},m{ozilla,ysql},p{rofile,utty},ssh,th{emes,underbird},vim*})
+sources+=('/home/user/'.{bash,cinnamon,config,dmrc,fzf*,g{conf,i{mp,t*},n{ome,upg},tkrc*},icons,l{inuxmint,ocal},m{ozilla,ysql},p{rofile,utty},ssh,th{emes,underbird},vim*,.znc})
 sources+=('/var/lib/libvirt/images')
 
 # btrfs volume for the backup, you should let this script create it
@@ -109,7 +109,7 @@ go() {
     # tokens can be chained (ex: backup clean snap, backup snap clean)
     for token in $@; do
         case $token in
-            snap|clean) actions[${actions[@]}]=_$token ;;
+            snap|clean) actions[${#actions[@]}]=_$token ;;
                     -d) dryrun='echo' ;;
                     -*) echo "invalid option" ; exit 1 ;;
                      *) echo "actions are either 'snap' or 'clean'" ; exit 1 ;;
