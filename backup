@@ -46,7 +46,7 @@ _snap() {
     # remove from the first snapshot the copy of the initial subtree in the base
     [[ "$base" == "$destination" ]] && $dryrun rm -rfv "$destination/$serial/${serial%/*}"
 
-    # expand the source definitions to a list
+    # needed to expand the globbed source definitions
     shopt -s extglob
 
     # update the new snapshot
@@ -59,33 +59,31 @@ _snap() {
 _clean() {
     echo -e "\nCLEANING UP ===="
 
-    local y m d s cd=0 cw=0 cm=0 cy=0 dow clean=false cleaned=0 rest str
+    local y m d s cd=0 lw=0 cm=0 cy=0 dow clean=false cleaned=0 rest str
     while IFS='/' read rest y m d s; do
-        # check retention over leaf snapshot counter
+        # check retention over leaf snapshot counter (always changes)
         (( clean = retention[leafs]-- < 1 ))
 
         # check retention when the day has changed
         (( 10#$cd != 10#$d && (cd = 10#$d, clean &= retention[days]-- < 1) ))
 
-        # if we are more than 6 days before the previous last day of week (cw),
-        # the week has changed, so check week retention
-        [[ "$cw" == "0" ]] || (( $(date -d "$cw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
+        # if we are more than 6 days before the previous last day of week, check
+        # week retention as this is a different week
+        [[ "$lw" == "0" ]] || (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
         && (( clean &= retention[weeks]-- < 1 ))
 
         # get last day for the week of the snapshot
-        cw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +"%F")
+        lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +"%F")
 
-        # month retention
+        # check month and year retention when they change
         (( 10#$cm != 10#$m && (cm = 10#$m, clean &= retention[months]-- < 1) ))
-
-        # year retention
         (( 10#$cy != 10#$y && (cy = 10#$y, clean &= retention[years]-- < 1) ))
 
         (( clean )) && {
             $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
-            # output will be inaccurate in dry mode as we can't remove parents
+            # FIXME: output will be inaccurate in dry mode as we can't remove parents
             for dir in "$destination/"{$y/$m/$d,$y/$m,$y}; do
                 [[ -z "$(ls -A "$dir")" ]] && $dryrun rmdir -v "$dir"
             done
