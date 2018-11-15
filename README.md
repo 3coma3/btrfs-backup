@@ -8,4 +8,4 @@ In around 50 lines of code (omitting config, blank lines and comments), it provi
 * File globs for source specification in a compact form
 * Dry-run mode
 
-Its goals are to be easy to use, understand, modify and adapt to work as a cron job or manually, and be extended with btrfs / rsync features like btrfs deduplication, miscellaneous rsync options, etc. Security may be added by stacking btrfs over LUKS.
+Its goals are to be easy to use, understand, modify and adapt to work as a cron job or manually, and be extended with btrfs / rsync features like deduplication, compression, network transports and miscellaneous options, etc. Security may be added by stacking btrfs over LUKS.
