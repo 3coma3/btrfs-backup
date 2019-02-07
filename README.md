@@ -1,6 +1,4 @@
 # btrfs-backup
-A tiny, solid script for versioned file backups in Btrfs backends
-
 I know there are already a million Btrfs/Rsync scripts, I know. I checked them out. Every tool I tested was made to manage snapshots / backups for native btrfs filesystems, or had too many impositions/assumptions about how you should structure your backups: you must name or initialize your destinations in some specific way, or cron the executions in another way, or learn yet another config file syntax. Others were too restrictive in the granularity and retention of snapshots, for example: you can have only N yearly backups, or X monthly, etc. And then others had dependencies like a database in which to store metadata, or some extra language interpreter that you needed to understand, etc.
 
 I wanted something lean and mean, that does the job and gets out of the way, and has minimal dependencies. I needed an easy to navigate snapshot structure, and I wanted a retention / rotation scheme.  I wanted ease of use and above everything, ease of understanding, so anyone can modify it.
