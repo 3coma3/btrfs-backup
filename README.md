@@ -59,7 +59,7 @@ This is an absolute path to a btrfs volume. The script expects that you don't cr
 
 `retention`
 
-This associative array describes your *retention policy*. Basically you say how many snapshots you want to keep per discrete snapshot, different day, different week, different month and different year. More on this down this documentitc.
+This associative array describes your *retention policy*. Basically you say how many snapshots you want to keep per discrete snapshot, different day, different week, different month and different year. More on this down this document.
 
 `weekstart`
 
