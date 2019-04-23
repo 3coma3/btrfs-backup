@@ -1,3 +1,5 @@
+![Image](https://raw.githubusercontent.com/3coma3/btrfs-backup/master/image.png)
+
 # btrfs-backup
 I know there are already a million Btrfs/Rsync scripts, I know. I checked them out. Every tool I tested was made to manage snapshots / backups for native btrfs filesystems, or had too many impositions/assumptions about how you should structure your backups: you must name or initialize your destinations in some specific way, or cron the executions in another way, or learn yet another config file syntax. Others were too restrictive in the granularity and retention of snapshots, for example: you can have only N yearly backups, or X monthly, etc. And then others had dependencies like a database in which to store metadata, or some extra language interpreter that you needed to understand, etc.
 
