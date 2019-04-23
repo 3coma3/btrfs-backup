@@ -107,7 +107,7 @@ go() {
     # tokens can be chained (ex: backup clean snap, backup snap clean)
     for token in $@; do
         case $token in
-            snap|clean) actions[${#actions[@]}]=_$token ;;
+            snap|clean) actions+=("_$token") ;;
                     -d) dryrun='echo' ;;
                     -*) echo "invalid option" ; exit 1 ;;
                      *) echo "actions are either 'snap' or 'clean'" ; exit 1 ;;
