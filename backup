@@ -65,7 +65,7 @@ _snap() {
     # update the new snapshot
     for source in "${sources[@]}"; do
         echo -e "\nBACKING UP $source ..."
-        readarray -t rsyncfilters <<< "${filters["$source"]}"
+         readarray -t rsyncfilters < <(sed '/^$/d' <<< "${filters["$source"]}")
         $dryrun rsync $rsyncflags "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
     done
 }
