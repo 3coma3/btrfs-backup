@@ -30,7 +30,7 @@ So I wrote this little piece, and I'm pretty satisfied with the results:
 * Does Incremental, in place, COW powered snapshots out of any file system Rsync can read, courtesy of Btrfs.
 * Custom GFS-style rotation algorithm to maintain arbitrary copies at the snapshot, day, week, month and year levels.
 * Compact data source specification in extended bash "glob" [pattern syntax](https://mywiki.wooledge.org/glob)
-* Compact per-data-source filter specification in rsync's own [pattern syntax](http://man7.org/linux/man-pages/man1/rsync.1.html#FILTER_RULES)
+* Compact per-data-source filter specification in rsync's own [pattern syntax](https://manpages.ubuntu.com/manpages/eoan/en/man1/rsync.1.html#include/exclude%20pattern%20rules)
 * Queued operations
 * Dry-run mode
 
