@@ -286,7 +286,7 @@ EOF
                 shift
                 ;;
 
-            -d) dryrun='echo'
+            -d) dryrun='msg'
                 ;;
 
             -q) rsyncflags_verbose=''
