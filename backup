@@ -46,6 +46,27 @@ export config=''
 export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force'
 
 # USER COMMANDS ----------------------------------------------------------------
+_help() {
+    msg<<EOF
+Usage: $script_name -h | help
+       $script_name [ACTION|OPTION]...
+
+  -h, help                  show this help
+
+Actions can be specified multiple times:
+  snap                      take a snapshot
+  rotate                    apply retention policy on old snapshots
+  test <n>                  test retention policy, simulating n random snapshots
+  find <regex>              find snapshots whose path matches the regular expression
+  remove <regex>            remove snapshots whose path matches the regular expression
+
+Options can be specified multiple times, only the last one is taken into account:
+  -c file                   configuration file to use, must exist in the same directory as this script
+  -d                        dry-run mode - only show what commands would be issued
+  -q                        be less verbose
+
+EOF
+}
 
 _snap() {
     echo -e "\nBACKING UP ===="
@@ -131,6 +152,20 @@ go() {
         shift
 
         case "$token" in
+            -h|help)
+                (( numtokens > 1 )) && {
+                    msg<<EOF
+Extra tokens on command line: ${@//${token}/}
+"$token" must be passed alone, ie: $script_name $token
+
+EOF
+                    return 1
+                }
+
+                _help
+                return 0
+                ;;
+
             -c) (( $# )) || {
                     msg "Expected a config file name after -c"
                     return 1
