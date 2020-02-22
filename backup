@@ -45,6 +45,8 @@ export config=''
 # recommended rsync flags, tune as needed
 export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force'
 
+export rsyncflags_verbose="-hvv --progress"
+
 # USER COMMANDS ----------------------------------------------------------------
 _help() {
     msg<<EOF
@@ -285,6 +287,9 @@ EOF
                 ;;
 
             -d) dryrun='echo'
+                ;;
+
+            -q) rsyncflags_verbose=''
                 ;;
 
             -*) msg "Invalid option: $token"
