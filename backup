@@ -68,11 +68,11 @@ Options can be specified multiple times, only the last one is taken into account
   -q                        be less verbose
 
 EOF
+    exit 0
 }
 
 _snap() {
-    msg "\nTaking snapshot====\n"
-
+    header "Taking snapshot"
     local base serial="$(date +%Y/%m/%d/%H%M%S)"
 
     if [[ ! -d "$destination" ]]; then
@@ -104,29 +104,32 @@ _snap() {
 }
 
 _find() {
-    msg "\nFinding snapshots====\n"
+    header "Finding snapshots"
     local regex="$1" str=''
     local -a found
 
     cd "$destination"
     readarray -t found < <(find . -maxdepth 4 -mindepth 4 -type d | sed -r "s|^\.(.*)|$destination\1|" | sort -dr | grep "$regex")
+
     (( ${#found[@]} != 1 )) && str='s'
     msg "${#found[@]} snapshot$str found\n"
+
+    # stdout
     (( ${#found[@]} )) && printf "%q\n" ${found[@]}
 }
 
 _remove() {
-    msg "\nRemoving snapshots====\n"
-    _find "$@" | tokenize_find | rotate_remove --force
+    header "Removing snapshots"
+    _find "$@" | tokenize_path | rotate_remove --force
 }
 
 _rotate() {
-    msg "\nApplying retention policy====\n"
-    _find ".*" | tokenize_find | check_retention | rotate_${rotate_action}
+    header "Applying retention policy"
+    _find ".*" | tokenize_path | check_retention | rotate_${rotate_action}
 }
 
 _test() {
-    msg "\nTesting retention policy====\n"
+    header "Testing retention policy"
     local count=${1:-0} y=0 mo=0 d=0 h=0 mi=0
 
     # FIXME: improve year generation
@@ -220,13 +223,22 @@ rotate_btrfs_send() {
 }
 
 # general internal functions ---------------------------------------------------
+header() {
+    local limit=80 a=${@}
+    msg "$@ $(eval printf '=%.0s' {1..$(( $limit - ${#a} ))})\n"
+}
+
+error() {
+    msg "$@"
+    exit 1
+}
+
 msg() {
     (( $# )) && {
         echo -e "$@" >&2
         return
     }
 
-    # read messages from stdin
     local msg
     while read msg; do
         echo -e "$msg"
@@ -248,40 +260,22 @@ go() {
                 ;;&
 
             find|remove|test)
-                (( $# )) || {
-                    msg "Expected an argument for the \"$token\" action"
-                    return 1
-                }
-
-                [[ "$token" == "test" ]] && [[ -n "${1//[0-9]/}" ]] && {
-                    msg "Argument for action \"$token\" must be numeric"
-                    return 1
-                }
-
+                (( $# )) || error "Expected an argument for the \"$token\" action"
+                [[ "$token" == "test" && -n "${1//[0-9]/}" ]] &&  error "Argument for action \"$token\" must be numeric"
                 action_args[$((${#actions[@]} - 1 ))]="$1"
                 shift
-                continue
                 ;;
 
             -h|help)
-                (( numtokens > 1 )) && {
-                    msg<<EOF
+                (( numtokens > 1 )) && error <<EOF
 Extra tokens on command line: ${@//${token}/}
 "$token" must be passed alone, ie: $script_name $token
 
 EOF
-                    return 1
-                }
-
                 _help
-                return 0
                 ;;
 
-            -c) (( $# )) || {
-                    msg "Expected a config file name after -c"
-                    return 1
-                }
-
+            -c) (( $# )) || error "Expected a config file name after -c"
                 config="$script_dir/$1"
                 shift
                 ;;
@@ -292,31 +286,20 @@ EOF
             -q) rsyncflags_verbose=''
                 ;;
 
-            -*) msg "Invalid option: $token"
-                return 1
+            -*) error "Invalid option: $token"
                 ;;
 
             '') break
                 ;;
 
-             *) (( skip_else )) && continue
-                msg "Token not recognized: $token"
-                return 1
+             *) (( skip_else )) || error "Token not recognized: $token"
                 ;;
         esac
     done
 
-    (( ${#actions[@]} )) || {
-        msg "Please specify an action, or -h for help"
-        return 1
-    }
+    (( ${#actions[@]} )) || error "Please specify an action, or -h for help"
 
-    [[ -f "$config" ]] || {
-        msg "Configuration file not found: \"$config\""
-        return 1
-    }
-
-    . "$config"
+    [[ -f "$config" ]] && . "$config" || error "Configuration file not found: \"$config\""
 
     [[ -n "$dryrun" ]] && msg "DRY-RUN MODE: this is a simulation"
 
