@@ -138,18 +138,15 @@ _test() {
         (( (mo==0 || RANDOM % 100 + 1 > 50) && (mo = RANDOM % 12 + 1) ))
         (( (d==0 || RANDOM % 100 + 1 > 0) && (d = RANDOM % 27 + 1) ))
         (( h = RANDOM % 23 + 1, mi = RANDOM % 59 + 1 ))
-        printf "%02d %02d %02d %02d%02d\n" $y $mo $d $h $mi
-    done | sort -dr | check_retention --all | rotate_test
+        printf "$destination/%02d/%02d/%02d/%02d%02d\n" $y $mo $d $h $mi
+    done | sort -dr | tokenize_path | check_retention --all | rotate_test
 }
 
 # INTERNAL FUNCTIONS -----------------------------------------------------------
-tokenize_find() {
+tokenize_path() {
     local mark=$(expr "$1" == "--mark")
-    if (( mark )); then
-        sed -re "s|^$destination/(.*)$|\1 $2|" -e 's|/| |g'
-    else
-        sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
-    fi
+    (( mark )) && sed -re "s|^$destination/(.*)$|\1 $2|" -e 's|/| |g' \
+               || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
 
 check_retention() {
