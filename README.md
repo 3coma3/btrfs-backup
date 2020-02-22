@@ -16,10 +16,11 @@ So I wrote this little piece, and I'm pretty satisfied with the results:
 * the only state is the backup store itself, which holds the only metadata used so far: the timestamp for each backup, that is *also* nicely encoding the navigational structure. In other words: the database is the filesystem. If more metadata support is added in the future, it will be done through extended attributes, so if you want indexes or caches, you can add them as you need with any of the many external tools available
 * internally, liberal use of stream operations allows for a high degree of code reutilization, rendering the code clean and making easy to modify and extend it
 
-**Update**
-The last couple of commits add many new features, which made me think to declare this in a "1.0 beta" state. Please test and report any issues observed. Feature requests and any other input are welcome!
-
-Also, the code has grown from about 50 lines to 150, which is still small for what it packs, but not so minimalistic anymore as it was so far. Feel free to check the earlier versions, I will add tags soon to the best ones to aid on their use.
+> **Update**
+>
+> The last couple of commits add many new features, which made me think to declare this in a "1.0 beta" state. Please test and report any issues observed. Feature requests and any other input are welcome!
+> 
+> Also, the code has grown from about 50 lines to 150, which is still small for what it packs, but not so minimalistic anymore as it was so far. Feel free to check the earlier versions, I will add tags soon to the best ones to aid in their use.
 
 ## Features
 
@@ -29,10 +30,11 @@ Also, the code has grown from about 50 lines to 150, which is still small for wh
 * Does Incremental, in place, COW powered snapshots out of any file system Rsync can read, courtesy of Btrfs.
 * Custom GFS-style rotation algorithm to maintain arbitrary copies at the snapshot, day, week, month and year levels.
 * Compact data source specification in extended bash "glob" [pattern syntax](https://mywiki.wooledge.org/glob)
-* Compact per-data-source filter specification in rsync's own [pattern syntax](http://man7.org/linux/man-pages/man1/rsync.1.html#FILTER_RULES) (currently testing)
+* Compact per-data-source filter specification in rsync's own [pattern syntax](http://man7.org/linux/man-pages/man1/rsync.1.html#FILTER_RULES)
 * Queued operations
 * Dry-run mode
-**(new)**
+
+**new in version 1.0:**
 * Multiple config support, with global defaults and per config overrides
 * Regex operations: find and remove snapshots quickly
 * Pluggable rotation handlers
@@ -50,7 +52,7 @@ The script is contained in the file `backup` in this repo. You'll want to give i
 
 ### Configuration
 
-The configuration variables are declared in the CONFIG DECLARATION AND DEFAULTS section at the top of the script. This is also where any defaults may be set.
+Config variables are declared in the CONFIG DECLARATION AND DEFAULTS section at the top of the script. This is also where any defaults may be set.
 
 Custom configuration files, placed in the same directory as this script, can set (or override) the configuration variables as needed, for different backup applications. I include the two that I use at my laptop:
 
