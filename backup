@@ -5,6 +5,7 @@
 # extended globbing is needed for argument parsing and source/filter expressions
 shopt -s extglob
 
+# disable file globbing so things like * can be used for regexps
 set -f
 
 export script_name="$0"
@@ -93,9 +94,8 @@ _snap() {
     # remove from the first snapshot the copy of the initial subtree at the base
     [[ "$base" == "$destination" ]] && $dryrun rm -rfv "$destination/$serial/${serial%/*}"
 
-    local -a rsyncfilters=()
-
     # update the new snapshot
+    local -a rsyncfilters=()
     for source in "${sources[@]}"; do
         msg "\nBacking up $source ..."
         readarray -t rsyncfilters < <(sed '/^$/d' <<< "${filters["$source"]}")
@@ -161,8 +161,8 @@ check_retention() {
         # check retention when the day has changed
         (( 10#$cd != 10#$d && (cd = 10#$d, rotate &= retention[days]-- < 1) ))
 
-        # if we are more than 6 days before the previous last day of week, check
-        # week retention as this is a different week
+        # if we are more than 6 days before the previous last day of week,
+        # check week retention as this is a different week
         [[ "$lw" == "0" ]] || (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
         && (( rotate &= retention[weeks]-- < 1 ))
 
@@ -190,9 +190,9 @@ rotate_test() {
 }
 
 rotate_remove() {
-    local force=$(expr "$1" == "--force") y m d s rotate rotated=0 str=''
+    local force=$(expr "$1" == "--force") y m d s rotate removed=0 str=''
     while read y m d s rotate; do
-        (( (force || rotate) && ++rotated )) && {
+        (( (force || rotate) && ++removed )) && {
             $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
@@ -203,8 +203,8 @@ rotate_remove() {
         }
     done
 
-    (( rotated != 1 )) && str='s'
-    msg "$rotated snapshot$str removed"
+    (( removed != 1 )) && str='s'
+    msg "$removed snapshot$str removed"
 }
 
 rotate_archive() {
@@ -247,9 +247,9 @@ go() {
     local -a actions=() action_args=()
 
     while token="$1"; do
-        skip_else=0
         shift
 
+        skip_else=0
         case "$token" in
             snap|find|remove|rotate|test)
                 actions+=("_$token")
@@ -298,7 +298,7 @@ EOF
 
     [[ -f "$config" ]] && . "$config" || error "Configuration file not found: \"$config\""
 
-    [[ -n "$dryrun" ]] && msg "DRY-RUN MODE: this is a simulation"
+    [[ -n "$dryrun" ]] && msg "DRY-RUN MODE - this is a simulation\n"
 
     for action in ${!actions[@]}; do
         ${actions[$action]} ${action_args[$action]}
