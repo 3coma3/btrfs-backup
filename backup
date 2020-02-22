@@ -69,7 +69,7 @@ EOF
 }
 
 _snap() {
-    echo -e "\nBACKING UP ===="
+    msg "\nTaking snapshot====\n"
 
     local base serial="$(date +%Y/%m/%d/%H%M%S)"
 
@@ -88,43 +88,109 @@ _snap() {
     # add leaf (hhmmss) as a snapshot, based on $base
     $dryrun btrfs subvolume snapshot "$base" "$destination/$serial"
 
-    # remove from the first snapshot the copy of the initial subtree in the base
+    # remove from the first snapshot the copy of the initial subtree at the base
     [[ "$base" == "$destination" ]] && $dryrun rm -rfv "$destination/$serial/${serial%/*}"
-    
+
     local -a rsyncfilters=()
 
     # update the new snapshot
     for source in "${sources[@]}"; do
-        echo -e "\nBACKING UP $source ..."
-         readarray -t rsyncfilters < <(sed '/^$/d' <<< "${filters["$source"]}")
-        $dryrun rsync $rsyncflags "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
+        msg "\nBacking up $source ..."
+        readarray -t rsyncfilters < <(sed '/^$/d' <<< "${filters["$source"]}")
+        $dryrun rsync $rsyncflags $rsyncflags_verbose "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
     done
 }
 
-_clean() {
-    echo -e "\nCLEANING UP ===="
+_find() {
+    msg "\nFinding snapshots====\n"
+    local regex="$1" str=''
+    local -a found
 
-    local rest y m d s cd=0 lw=0 cm=0 cy=0 cleaned=0 clean str
-    while IFS='/' read rest y m d s; do
+    cd "$destination"
+    readarray -t found < <(find . -maxdepth 4 -mindepth 4 -type d | sed -r "s|^\.(.*)|$destination\1|" | sort -dr | grep "$regex")
+    (( ${#found[@]} != 1 )) && str='s'
+    msg "${#found[@]} snapshot$str found\n"
+    (( ${#found[@]} )) && printf "%q\n" ${found[@]}
+}
+
+_remove() {
+    msg "\nRemoving snapshots====\n"
+    _find "$@" | tokenize_find | rotate_remove --force
+}
+
+_rotate() {
+    msg "\nApplying retention policy====\n"
+    _find ".*" | tokenize_find | check_retention | rotate_${rotate_action}
+}
+
+_test() {
+    msg "\nTesting retention policy====\n"
+    local count=${1:-0} y=0 mo=0 d=0 h=0 mi=0
+
+    # FIXME: improve year generation
+    while (( count-- )); do
+        (( (y==0 || RANDOM % 100 + 1 > 50) && (y = RANDOM % 20 + 2000) ))
+        (( (mo==0 || RANDOM % 100 + 1 > 50) && (mo = RANDOM % 12 + 1) ))
+        (( (d==0 || RANDOM % 100 + 1 > 0) && (d = RANDOM % 27 + 1) ))
+        (( h = RANDOM % 23 + 1, mi = RANDOM % 59 + 1 ))
+        printf "%02d %02d %02d %02d%02d\n" $y $mo $d $h $mi
+    done | sort -dr | check_retention --all | rotate_test
+}
+
+# INTERNAL FUNCTIONS -----------------------------------------------------------
+tokenize_find() {
+    local mark=$(expr "$1" == "--mark")
+    if (( mark )); then
+        sed -re "s|^$destination/(.*)$|\1 $2|" -e 's|/| |g'
+    else
+        sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
+    fi
+}
+
+check_retention() {
+    local all=$(expr "$1" == "--all") rest y m d s cd=0 lw=0 cm=0 cy=0 rotate=0
+
+    msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
+
+    while read y m d s; do
         # check retention over leaf snapshot counter (always changes)
-        (( clean = retention[leafs]-- < 1 ))
+        (( rotate = retention[leafs]-- < 1 ))
 
         # check retention when the day has changed
-        (( 10#$cd != 10#$d && (cd = 10#$d, clean &= retention[days]-- < 1) ))
+        (( 10#$cd != 10#$d && (cd = 10#$d, rotate &= retention[days]-- < 1) ))
 
         # if we are more than 6 days before the previous last day of week, check
         # week retention as this is a different week
         [[ "$lw" == "0" ]] || (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
-        && (( clean &= retention[weeks]-- < 1 ))
+        && (( rotate &= retention[weeks]-- < 1 ))
 
         # get last day for the week of the snapshot
         lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +"%F")
 
         # check month and year retention when they change
-        (( 10#$cm != 10#$m && (cm = 10#$m, clean &= retention[months]-- < 1) ))
-        (( 10#$cy != 10#$y && (cy = 10#$y, clean &= retention[years]-- < 1) ))
+        (( 10#$cm != 10#$m && (cm = 10#$m, rotate &= retention[months]-- < 1) ))
+        (( 10#$cy != 10#$y && (cy = 10#$y, rotate &= retention[years]-- < 1) ))
 
-        (( clean )) && {
+        (( rotate || all )) && echo $y $m $d $s $rotate
+    done
+}
+
+# rotation handlers ------------------------------------------------------------
+rotate_test() {
+    local y m d s rotate rotated=0 str=''
+    while read y m d s rotate; do
+        (( rotate && ++rotated )) && str='' || str=' not'
+        msg "$destination/$y/$m/$d/$s$str marked"
+    done
+
+    (( rotated != 1 )) && str='s'
+    msg "$rotated snapshot$str marked for rotation"
+}
+
+rotate_remove() {
+    local force=$(expr "$1" == "--force") y m d s rotate rotated=0 str=''
+    while read y m d s rotate; do
+        (( (force || rotate) && ++rotated )) && {
             $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
@@ -132,16 +198,38 @@ _clean() {
             for dir in "$destination/"{$y/$m/$d,$y/$m,$y}; do
                 [[ -z "$(ls -A "$dir")" ]] && $dryrun rmdir -v "$dir"
             done
-
-            (( cleaned++ ))
         }
-    done< <(cd "$destination" ; find . -maxdepth 4 -mindepth 4 -type d | sort -dr)
+    done
 
-    (( cleaned == 1 )) && str=" was" || str="s were" 
-    echo "$cleaned snapshot$str cleaned."
+    (( rotated != 1 )) && str='s'
+    msg "$rotated snapshot$str removed"
 }
 
+rotate_archive() {
+    msg "$FUNCNAME: not implemented yet"
+}
+
+rotate_move() {
+    msg "$FUNCNAME: not implemented yet"
+}
+
+rotate_btrfs_send() {
+    msg "$FUNCNAME: not implemented yet"
+}
+
+# general internal functions ---------------------------------------------------
+msg() {
+    (( $# )) && {
+        echo -e "$@" >&2
+        return
     }
+
+    # read messages from stdin
+    local msg
+    while read msg; do
+        echo -e "$msg"
+    done >&2
+}
 
 go() {
     local token numtokens=$# skip_else
@@ -152,6 +240,27 @@ go() {
         shift
 
         case "$token" in
+            snap|find|remove|rotate|test)
+                actions+=("_$token")
+                skip_else=1
+                ;;&
+
+            find|remove|test)
+                (( $# )) || {
+                    msg "Expected an argument for the \"$token\" action"
+                    return 1
+                }
+
+                [[ "$token" == "test" ]] && [[ -n "${1//[0-9]/}" ]] && {
+                    msg "Argument for action \"$token\" must be numeric"
+                    return 1
+                }
+
+                action_args[$((${#actions[@]} - 1 ))]="$1"
+                shift
+                continue
+                ;;
+
             -h|help)
                 (( numtokens > 1 )) && {
                     msg<<EOF
