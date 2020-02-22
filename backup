@@ -1,57 +1,51 @@
 #!/bin/bash
 
-# enable extended globbing for richer source/exclude expressions
+# BASICS -----------------------------------------------------------------------
+
+# extended globbing is needed for argument parsing and source/filter expressions
 shopt -s extglob
 
-# CONFIG START -----------------------------------------------------------------
+set -f
 
-# the following settings make full backups periodically on my system - tune as
-# needed
+export script_name="$0"
+export script_dir="$(dirname $(readlink -f "$0"))"
 
-# btrfs volume for the backup, you should let this script create it
-destination='/media/me/BACKUP/snaps'
+# CONFIG DECLARATION AND DEFAULTS ----------------------------------------------
+
+# Defaults set here can be overriden at the config files passed with -c
+
+# path to a btrfs subvolume (NOT a root volume), for snapshot storage
+# you should let this script create it
+export destination=''
 
 # file globs with paths to back up
-declare -a sources=()
-sources+=('/')
-sources+=('/home')
+export -a sources=()
 
-# per-source file globs with paths to mandatorily include / exclude
-declare -A filters=()
-filters['/']="
-- dev/*
-- home/*
-- media/*
-- mnt/*/*
-- proc/*
-- run/*
-- sys/*
-- tmp/*
-- var/tmp/*
-"
+# per-source file globs with mandatory include / exclude paths
+export -A filters=()
 
-filters['/home']="
-- snaps/*
-- box/snaps/*
-- .cache/*
-"
+# min snapshots to keep per level (>= 0)
+export -A retention=( [leafs]=15 [days]=30 [weeks]=24 [months]=12 [years]=5 )
 
-# left as example of inclusion filter
-filters['/var/lib/libvirt/images']="+ image1.img"
+# what to do when a snapshot is marked for rotation by the policy checks
+# so far the only handlers implemented are "test" and "remove"
+export rotate_action='remove'
 
-# snapshots to keep per level (min=0), snapshots may evaluate to many levels
-declare -A retention=( [leafs]=15 [days]=30 [weeks]=24 [months]=12 [years]=5 )
+# used in the weekly retention checks
+# 1=mon, 7=sun
+export weekstart=7
 
-# 1=mon, 7=sun - used in the weekly retention checks
-weekstart=7
+# can be set by passing -d on the command line, or hardcoded to ex. 'echo'
+export dryrun=''
 
-# recommended flags, tune as needed
-rsyncflags='-aHAXERhvv --progress --numeric-ids --inplace --no-whole-file --delete-delay --force'
+# name of a configuration file stored in the same directory as this script
+# can be set by passing -c <name.conf>, or hardcoded here
+export config=''
 
-# can be set by passing -d on the command line, or hardcode here to ex. 'echo'
-dryrun=''
+# recommended rsync flags, tune as needed
+export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force'
 
-# CONFIG END -------------------------------------------------------------------
+# USER COMMANDS ----------------------------------------------------------------
 
 _snap() {
     echo -e "\nBACKING UP ===="
@@ -126,25 +120,60 @@ _clean() {
     echo "$cleaned snapshot$str cleaned."
 }
 
-go() {
-    [[ -z "$@" || "$@" == "-d" ]] && {
-        echo "please specify an action" ; exit 1
     }
 
-    local -a actions=()
+go() {
+    local token numtokens=$# skip_else
+    local -a actions=() action_args=()
 
-    # actions are just the name of the functions starting with _, minus the _
-    # tokens can be chained (ex: backup clean snap, backup snap clean)
-    for token in $@; do
-        case $token in
-            snap|clean) actions+=("_$token") ;;
-                    -d) dryrun='echo' ;;
-                    -*) echo "invalid option" ; exit 1 ;;
-                     *) echo "actions are either 'snap' or 'clean'" ; exit 1 ;;
+    while token="$1"; do
+        skip_else=0
+        shift
+
+        case "$token" in
+            -c) (( $# )) || {
+                    msg "Expected a config file name after -c"
+                    return 1
+                }
+
+                config="$script_dir/$1"
+                shift
+                ;;
+
+            -d) dryrun='echo'
+                ;;
+
+            -*) msg "Invalid option: $token"
+                return 1
+                ;;
+
+            '') break
+                ;;
+
+             *) (( skip_else )) && continue
+                msg "Token not recognized: $token"
+                return 1
+                ;;
         esac
     done
 
-    for action in ${actions[@]}; do $action; done
+    (( ${#actions[@]} )) || {
+        msg "Please specify an action, or -h for help"
+        return 1
+    }
+
+    [[ -f "$config" ]] || {
+        msg "Configuration file not found: \"$config\""
+        return 1
+    }
+
+    . "$config"
+
+    [[ -n "$dryrun" ]] && msg "DRY-RUN MODE: this is a simulation"
+
+    for action in ${!actions[@]}; do
+        ${actions[$action]} ${action_args[$action]}
+    done
 }
 
 go $@
