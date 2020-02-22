@@ -81,7 +81,7 @@ _snap() {
         base="$destination"
     else
         # otherwise the base is the last snapshot under the base subvolume
-        base="$destination/$(sudo btrfs subvolume list -os --sort=gen "$destination" | sed -nr '$s/^[^\/]+\/(.*)$/\1/p')"
+        base="$destination/$(sudo btrfs subvolume list -os --sort=ogen "$destination" | sed -nr '$s|^.*/([^/]+/[^/]+/[^/]+/[^/]+)$|\1|p')"
     fi
 
     # create subtree for the new snapshot (yy/mm/dd branches)
