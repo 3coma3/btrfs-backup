@@ -13,7 +13,7 @@ export script_dir="$(dirname $(readlink -f "$0"))"
 
 # CONFIG DECLARATION AND DEFAULTS ----------------------------------------------
 
-# Defaults set here can be overriden at the config files passed with -c
+# Defaults set here can be overridden at the config files passed with -c
 
 # path to a btrfs subvolume (NOT a root volume), for snapshot storage
 # you should let this script create it
