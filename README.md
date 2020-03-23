@@ -168,10 +168,10 @@ Like `find` but instead of printing names, it will destroy the snapshots. Use wi
 
 You can "chain" any of the actions above, they will be queued and executed in order:
 
-`backup clean snap`
+`backup rotate snap`
 Will first apply the retention policy and then take a snapshot.
 
-`backup snap clean`
+`backup snap rotate`
 Will do the opposite, first take a snapshot and then check the snapshot repository against the policy.
 
 `backup snap find '.*'`
