@@ -11,6 +11,15 @@ set -f
 export script_name="$0"
 export script_dir="$(dirname $(readlink -f "$0"))"
 
+# Need to run btrfs subvolume as root with the help of sudo
+# Skip sudo when the script is run as root, because this usually is not allowed
+if [[ $EUID -eq 0 ]]; then
+    export sudo=''
+else
+    export sudo='sudo'
+fi
+
+
 # CONFIG DECLARATION AND DEFAULTS ----------------------------------------------
 
 # Defaults set here can be overridden at the config files passed with -c
@@ -82,7 +91,7 @@ _snap() {
         base="$destination"
     else
         # otherwise the base is the last snapshot under the base subvolume
-        base="$destination/$(sudo btrfs subvolume list -os --sort=ogen "$destination" | sed -nr '$s|^.*/([^/]+/[^/]+/[^/]+/[^/]+)$|\1|p')"
+        base="$destination/$($sudo btrfs subvolume list -os --sort=ogen "$destination" | sed -nr '$s|^.*/([^/]+/[^/]+/[^/]+/[^/]+)$|\1|p')"
     fi
 
     # create subtree for the new snapshot (yy/mm/dd branches)
