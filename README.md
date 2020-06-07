@@ -181,7 +181,7 @@ Will print an updated list of the snapshots after taking the last one.
 and so on.
 
 
-####Command line switches ("options"):
+#### Command line switches ("options"):
 
 `-h`
 An alias to `help`
