@@ -55,11 +55,11 @@ export config=''
 # recommended rsync flags, tune as needed
 export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force'
 
-export rsyncflags_verbose="-hvv --progress"
+export rsyncflags_verbose='-hvv --progress'
 
 # USER COMMANDS ----------------------------------------------------------------
 _help() {
-    msg<<EOF
+    msg <<EOF
 Usage: $script_name -h | help
        $script_name [ACTION|OPTION]...
 
@@ -82,7 +82,7 @@ EOF
 }
 
 _snap() {
-    header "Taking snapshot"
+    header 'Taking snapshot'
     local base serial="$(date +%Y/%m/%d/%H%M%S)"
 
     if [[ ! -d "$destination" ]]; then
@@ -113,7 +113,7 @@ _snap() {
 }
 
 _find() {
-    header "Finding snapshots"
+    header 'Finding snapshots'
     local regex="$1" str=''
     local -a found
 
@@ -129,17 +129,17 @@ _find() {
 }
 
 _remove() {
-    header "Removing snapshots"
+    header 'Removing snapshots'
     _find "$@" | tokenize_path | rotate_remove --force
 }
 
 _rotate() {
-    header "Applying retention policy"
-    _find ".*" | tokenize_path | check_retention | rotate_${rotate_action}
+    header 'Applying retention policy'
+    _find '.*' | tokenize_path | check_retention | rotate_${rotate_action}
 }
 
 _test() {
-    header "Testing retention policy"
+    header 'Testing retention policy'
     local count=${1:-0} y=0 mo=0 d=0 h=0 mi=0
 
     # FIXME: improve year generation
@@ -154,13 +154,13 @@ _test() {
 
 # INTERNAL FUNCTIONS -----------------------------------------------------------
 tokenize_path() {
-    local mark=$(expr "$1" == "--mark")
+    local mark=$(expr "$1" == '--mark')
     (( mark )) && sed -re "s|^$destination/(.*)$|\1 $2|" -e 's|/| |g' \
                || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
 
 check_retention() {
-    local all=$(expr "$1" == "--all") rest y m d s cd=0 lw=0 cm=0 cy=0 rotate=0
+    local all=$(expr "$1" == '--all') rest y m d s cd=0 lw=0 cm=0 cy=0 rotate=0
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
@@ -177,7 +177,7 @@ check_retention() {
         && (( rotate &= retention[weeks]-- < 1 ))
 
         # get last day for the week of the snapshot
-        lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +"%F")
+        lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +'%F')
 
         # check month and year retention when they change
         (( 10#$cm != 10#$m && (cm = 10#$m, rotate &= retention[months]-- < 1) ))
@@ -200,7 +200,7 @@ rotate_test() {
 }
 
 rotate_remove() {
-    local force=$(expr "$1" == "--force") y m d s rotate removed=0 str=''
+    local force=$(expr "$1" == '--force') y m d s rotate removed=0 str=''
     while read y m d s rotate; do
         (( (force || rotate) && ++removed )) && {
             $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
@@ -269,7 +269,7 @@ go() {
             find|remove|test)
                 (( $# )) || error "Expected an argument for the \"$token\" action"
                 [[ "$token" == "test" && -n "${1//[0-9]/}" ]] &&  error "Argument for action \"$token\" must be numeric"
-                action_args[$((${#actions[@]} - 1 ))]="$1"
+                action_args[$(( ${#actions[@]} - 1 ))]="$1"
                 shift
                 ;;
 
@@ -282,7 +282,7 @@ EOF
                 _help
                 ;;
 
-            -c) (( $# )) || error "Expected a config file name after -c"
+            -c) (( $# )) || error 'Expected a config file name after -c'
                 config="$script_dir/$1"
                 shift
                 ;;
@@ -304,11 +304,11 @@ EOF
         esac
     done
 
-    (( ${#actions[@]} )) || error "Please specify an action, or -h for help"
+    (( ${#actions[@]} )) || error 'Please specify an action, or -h for help'
 
     [[ -f "$config" ]] && . "$config" || error "Configuration file not found: \"$config\""
 
-    [[ -n "$dryrun" ]] && msg "DRY-RUN MODE - this is a simulation\n"
+    [[ -n "$dryrun" ]] && msg 'DRY-RUN MODE - this is a simulation\n'
 
     for action in ${!actions[@]}; do
         ${actions[$action]} ${action_args[$action]}
