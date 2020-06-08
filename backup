@@ -231,8 +231,8 @@ rotate_btrfs_send() {
 
 # general internal functions ---------------------------------------------------
 header() {
-    local limit=80 a=${@}
-    msg "$@ $(eval printf '=%.0s' {1..$(( $limit - ${#a} ))})\n"
+    local limit=80 tmp="${@}" line="$(eval printf '=%.0s' {1..$(( $limit - ${#tmp} ))})"
+    msg "$@ $line\n"
 }
 
 error() {
