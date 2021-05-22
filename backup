@@ -57,6 +57,9 @@ export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-dela
 
 export rsyncflags_verbose='-hvv --progress'
 
+# the usual flag for verbose mode in many commands
+export def_verbose='-v'
+
 # USER COMMANDS ----------------------------------------------------------------
 _help() {
     msg <<EOF
@@ -291,6 +294,7 @@ EOF
                 ;;
 
             -q) rsyncflags_verbose=''
+                def_verbose=''
                 ;;
 
             -*) error "Invalid option: $token"
