@@ -86,25 +86,22 @@ EOF
 
 _snap() {
     header 'Taking snapshot'
-    local base serial="$(date +%Y/%m/%d/%H%M%S)"
+    local serial="$(date +%Y/%m/%d/%H%M%S)" base="$destination$($sudo btrfs subvolume list -os --sort=ogen "$destination" 2>/dev/null | sed -nr '$s|^.*/([^/]+/[^/]+/[^/]+/[^/]+)$|/\1|p')"
 
-    if [[ ! -d "$destination" ]]; then
-        # if this is the first snapshot we need to create the base subvolume
-        $dryrun btrfs subvolume create "$destination"
-        base="$destination"
+    # create the destination btrfs subvolume if it doesn't exist
+    [[ ! -d "$destination" ]] && $dryrun btrfs subvolume create "$base"
+
+    # create yy/mm/dd subtree for the new hhmmss leaf
+    $dryrun mkdir $def_verbose -p "$destination/${serial%/*}"
+
+    if [[ "$base" == "$destination" ]]; then
+        # first snapshot: the leaf is a standard subvolume
+        $dryrun btrfs subvolume create "$destination/$serial"
     else
-        # otherwise the base is the last snapshot under the base subvolume
-        base="$destination/$($sudo btrfs subvolume list -os --sort=ogen "$destination" | sed -nr '$s|^.*/([^/]+/[^/]+/[^/]+/[^/]+)$|\1|p')"
+        # otherwise it is a new snapshot based on the last one
+        $dryrun btrfs subvolume snapshot "$base" "$destination/$serial"
     fi
 
-    # create subtree for the new snapshot (yy/mm/dd branches)
-    $dryrun mkdir -vp "$destination/${serial%/*}"
-
-    # add leaf (hhmmss) as a snapshot, based on $base
-    $dryrun btrfs subvolume snapshot "$base" "$destination/$serial"
-
-    # remove from the first snapshot the copy of the initial subtree at the base
-    [[ "$base" == "$destination" ]] && $dryrun rm -rfv "$destination/$serial/${serial%/*}"
 
     # update the new snapshot
     local -a rsyncfilters=()
