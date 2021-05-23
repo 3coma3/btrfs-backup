@@ -145,7 +145,7 @@ rotate_remove() {
             # clean empty subtree
             # FIXME: output will be inaccurate in dry mode as we can't remove parents
             for dir in "$destination/"{$y/$m/$d,$y/$m,$y}; do
-                [[ -z "$(ls -A "$dir")" ]] && $dryrun rmdir -v "$dir"
+                [[ -z "$(ls -A "$dir")" ]] && $dryrun rmdir $flags_verbose "$dir"
             done
         }
     done
