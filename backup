@@ -88,9 +88,9 @@ error() {
 # the tag must be an integer, this will likely be used in the future to encode
 # rotation level / misc info using bit maps
 tokenize_path() {
-    local mark=$(expr "$1" == '--mark')
-    (( mark )) && sed -re "s|^$destination/(.*)$|\1 $2|" -e 's|/| |g' \
-               || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
+    local tag=$(( $(expr "$1" == '--tag') ? ${2:-1} : 0 ))
+    (( tag )) && sed -re "s|^$destination/(.*)$|\1 $tag|" -e 's|/| |g' \
+              || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
 
 # reads tokenize_path-style lines on stdin, tagging along per $retention policy
@@ -137,9 +137,9 @@ rotate_test() {
 }
 
 rotate_remove() {
-    local force=$(expr "$1" == '--force') y m d s rotate removed=0 str=''
+    local y m d s rotate removed=0 str=''
     while read y m d s rotate; do
-        (( (force || rotate) && ++removed )) && {
+        (( rotate && ++removed )) && {
             $dryrun $sudo btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
@@ -255,7 +255,7 @@ cmd_rotate() {
 
 cmd_remove() {
     header 'Removing snapshots'
-    cmd_find "$@" | tokenize_path | rotate_remove --force
+    cmd_find "$@" | tokenize_path --tag | rotate_remove
 }
 
 cmd_test() {
