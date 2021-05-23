@@ -116,8 +116,8 @@ _snap() {
     local -a rsyncfilters=()
     for source in "${sources[@]}"; do
         msg "\nBacking up $source ..."
-        readarray -t rsyncfilters < <(sed '/^$/d' <<< "${filters["$source"]}")
-        $dryrun rsync $rsyncflags $rsyncflags_verbose "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
+        readarray -t rsyncfilters< <(sed '/^$/d' <<< "${filters["$source"]}")
+        $dryrun rsync $rsyncflags $rsyncflags_verbose --filter="-/s $destination" "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
     done
 }
 
