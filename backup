@@ -215,7 +215,7 @@ rotate_remove() {
     local force=$(expr "$1" == '--force') y m d s rotate removed=0 str=''
     while read y m d s rotate; do
         (( (force || rotate) && ++removed )) && {
-            $dryrun btrfs subvolume delete "$destination/$y/$m/$d/$s"
+            $dryrun $sudo btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
             # FIXME: output will be inaccurate in dry mode as we can't remove parents
