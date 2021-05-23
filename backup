@@ -266,7 +266,8 @@ msg() {
 
 go() {
     local token numtokens=$# skip_else
-    local -a actions=() action_args=()
+    local -a actions=()
+    local -A action_args=()
 
     while token="$1"; do
         shift
