@@ -102,6 +102,15 @@ _snap() {
         $dryrun btrfs subvolume snapshot "$base" "$destination/$serial"
     fi
 
+    # if running under sudo, allow the underlying user access to the new leaves
+    [[ -n "$SUDO_USER" ]] && (( ! $EUID )) && {
+        local path="$destination" group="$(getent group $SUDO_GID | cut -d: -f1)"
+
+        for leaf in ${serial//\// }; do
+            path="$path/$leaf"
+            $dryrun $sudo chown $def_verbose "$SUDO_USER":"$group" "$path"
+        done
+    }
 
     # update the new snapshot
     local -a rsyncfilters=()
