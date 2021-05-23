@@ -135,7 +135,9 @@ _find() {
     msg "${#found[@]} snapshot$str found\n"
 
     # stdout
-    (( ${#found[@]} )) && printf "%q\n" ${found[@]}
+    for line in ${!found[@]}; do
+        echo "${found[$line]}"
+    done
 }
 
 _remove() {
