@@ -196,7 +196,11 @@ cmd_snap() {
     local serial="$(date +%Y/%m/%d/%H%M%S)" base="$destination$($sudo btrfs subvolume list -os --sort=ogen "$destination" 2>/dev/null | sed -nr '$s|^.*/([^/]+/[^/]+/[^/]+/[^/]+)$|/\1|p')"
 
     # create the destination btrfs subvolume if it doesn't exist
-    [[ ! -d "$destination" ]] && $dryrun btrfs subvolume create "$base"
+    # if running under sudo, ensure the underlying user has access to it
+    [[ ! -d "$destination" ]] && {
+        $dryrun btrfs subvolume create "$base"
+        [[ -n "$SUDO_USER" ]] && (( ! $EUID )) && $dryrun $sudo chown $flags_verbose "$SUDO_USER":"$group" "$destination"
+    }
 
     # create yy/mm/dd subtree for the new hhmmss leaf
     $dryrun mkdir $flags_verbose -p "$destination/${serial%/*}"
