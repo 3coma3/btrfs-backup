@@ -126,9 +126,10 @@ _find() {
     local regex="$1" str=''
     local -a found
 
-    [[ -d "$destination" ]] || error "Destination directory does not exists: \"$destination\""
+    [[ -d "$destination" ]] || error "Destination directory does not exist: \"$destination\""
     cd "$destination"
-    readarray -t found < <(find . -maxdepth 4 -mindepth 4 -type d | sed -r "s|^\.(.*)|$destination\1|" | sort -dr | grep "$regex")
+
+    readarray -t found< <(find . -maxdepth 4 -mindepth 4 -type d | sed -r "s|^\.(.*)|$destination\1|" | sort -dr | grep "$regex")
 
     (( ${#found[@]} != 1 )) && str='s'
     msg "${#found[@]} snapshot$str found\n"
