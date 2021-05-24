@@ -81,6 +81,14 @@ header() {
     msg "$@ ${header//?/${header_char}}\n"
 }
 
+confirm() {
+    local expect="$1"
+    shift
+    msg $@
+    read
+    [[ "$REPLY" =~ $expect ]]
+}
+
 error() {
     msg "$@"
     exit 1
@@ -190,6 +198,7 @@ Options can be specified multiple times, only the last one is taken into account
   -c file                   configuration file to use, must exist in the same directory as this script
   -d                        dry-run mode - only show what commands would be issued
   -q                        be less verbose
+  -y                        automatically accept confirmations (be careful!)
 
 EOF
     exit 0
@@ -323,6 +332,9 @@ EOF
 
             -q) export rsyncflags_verbose=''
                 export flags_verbose=''
+                ;;
+
+            -y) assume_yes=1
                 ;;
 
             -*) error "Invalid option: $token"
