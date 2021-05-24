@@ -247,8 +247,10 @@ cmd_snap() {
 }
 
 cmd_find() {
-    header 'Finding snapshots'
-    local regex="$1" str=''
+    [[ "$1" == '--no-header' ]] || header 'Finding snapshots'
+    shift
+
+    local regex="$@" str=''
     local -a found
 
     [[ -d "$destination" ]] || error "Destination directory does not exist: \"$destination\""
@@ -266,13 +268,13 @@ cmd_find() {
 }
 
 cmd_rotate() {
-     header "Applying retention policy (\"$rotate_handler\" rotation handler)"
-    cmd_find '.*' | tokenize_path | check_retention | rotate_${rotate_handler}
+    header "Applying retention policy (\"$rotate_handler\" rotation handler)"
+    cmd_find --no-header '.*' | tokenize_path | check_retention | rotate_${rotate_handler}
 }
 
 cmd_remove() {
     header 'Removing snapshots'
-    cmd_find "$@" | tokenize_path --tag | rotate_remove
+    cmd_find --no-header "$@" | tokenize_path --tag | rotate_remove
 }
 
 cmd_test() {
