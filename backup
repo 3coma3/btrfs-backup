@@ -274,7 +274,19 @@ cmd_rotate() {
 
 cmd_remove() {
     header 'Removing snapshots'
-    cmd_find --no-header "$@" | tokenize_path --tag | rotate_remove
+    local snaps str
+    readarray -t snaps< <(cmd_find --no-header "$@")
+
+    (( ${#snaps[@]} )) && {
+        (( assume_yes )) || {
+            printf '%s\n' "${snaps[@]}"
+            (( ${#snaps[@]} > 1 )) && str=them || str=it
+            confirm 'yes|y' "\nRemove ${str}? Enter \"y\" or \"yes\" to confirm: " || unset snaps
+            msg ''
+        }
+    }
+
+    printf '%s\n' "${snaps[@]}" | tokenize_path --tag | rotate_remove
 }
 
 cmd_test() {
