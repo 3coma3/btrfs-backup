@@ -18,23 +18,28 @@ So I wrote this little piece and I've been pretty happy with the results:
 
 > **Update**
 >
-> The last 10 commits include bugfixes and improvements (upgrading is recommended). Your help with testing and reporting back any issues observed, as wel as any other feedback or request, is very appreciated.
+> The recent commits include bugfixes and improvements (upgrading is recommended). Your help with testing and reporting back any issues observed, as well as any other feedback or request, is very appreciated.
 > 
-> The code has tripled the count from the original ~50 lines. It's still small for what it packs, but not so anymore as it was when it was created. Feel free to check the earlier versions, I might add tags to the best ones to aid in their use should that be needed. Note that prior versions might present bugs as no backporting work (or even versioning to those patches for that matter) is in place.
+> The code has grown beyond the original count from ~50 lines. It's still small for what it packs, but not so as when it was created. Feel free to check the earlier versions, I might add tags to the best ones to aid in their use should that be needed. Note that prior versions might present bugs as no backporting (or even versioning) is in place for old patches.
 
 ## Features
 
-* Plain bash. No DSL, no complex parameters, no nothing.
-* ~150 lines of code omitting config, comments and blank lines.
+* Plain bash. No DSL, no complex parameters, no nothing
+* ~250 lines of code omitting config, comments and blank lines
 * No impositions. It may be used as needed, manually or via cron. It does its job and gets out of the way.
-* Does Incremental, in place, COW powered snapshots out of any file system Rsync can read, courtesy of Btrfs.
-* Custom GFS-style rotation algorithm to maintain arbitrary copies at the snapshot, day, week, month and year levels.
+* Does Incremental, in place, COW powered snapshots out of any file system Rsync can read, courtesy of Btrfs
+* Custom GFS-style rotation algorithm to maintain arbitrary copies at the snapshot, day, week, month and year levels
 * Compact data source specification in extended bash "glob" [pattern syntax](https://mywiki.wooledge.org/glob)
 * Compact per-data-source filter specification in rsync's own [pattern syntax](https://manpages.ubuntu.com/manpages/eoan/en/man1/rsync.1.html#include/exclude%20pattern%20rules)
 * Queued operations
 * Dry-run mode
 
 ## Changelog
+**v1.2:**
+* Bugfixes
+* Improve output
+* Confirmation / autoconfirmation for snapshot removal
+
 **v1.1:**
 * Bugfixes
 * Improvements with sudo interaction and user permissions
