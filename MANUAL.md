@@ -151,6 +151,9 @@ It prepends an 'echo' to any modifying operation, making the script to print tho
 `-q`
 Currently, it restricts a bit the rsync output in normal situations. In future updates the verbosity controls may become more powerful. Note that most script messages are outputted to standard error, so they affect its "pipeable" output to a minimum.
 
+`-y`
+Assume 'yes' for questions. This is useful for automated invocations. Note that the script also accepts piped output from the "yes" command.
+
 
 
 ### Backup storage structure
