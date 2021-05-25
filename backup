@@ -75,6 +75,11 @@ msg() {
     done >&2
 }
 
+error() {
+    msg "$@"
+    exit 1
+}
+
 header() {
     local tmp="${@}" length=80
     local header=$(printf "%0$(( length - ${#tmp} ))d")
@@ -89,15 +94,22 @@ confirm() {
     [[ "$REPLY" =~ $expect ]]
 }
 
-error() {
-    msg "$@"
-    exit 1
+cond() {
+    local expr="$1" txt="$2"
+    shift 2
+
+    if (( $(expr "$expr") )); then
+        echo -ne "$txt"
+    else
+        echo -ne "$@"
+    fi
 }
 
 
-# INTERNAL FUNCTIONS -----------------------------------------------------------
-# changes '/' in yyyy/mm/dd/hhmmmss lines on stdin to ' ', can also tag lines
-# the tag must be an integer, this will likely be used in the future to encode
+# SNAPSHOT HELPERS -------------------------------------------------------------
+
+# filter '/' in yyyy/mm/dd/hhmmmss lines to ' ', --tag n appends tag at EOL
+# tag must be an integer, it will likely be used in the future to encode
 # rotation level / misc info using bit maps
 tokenize_path() {
     local tag=$(( $(expr "$1" == '--tag') ? ${2:-1} : 0 ))
@@ -138,20 +150,19 @@ check_retention() {
 
 # ROTATION HANDLERS ------------------------------------------------------------
 rotate_test() {
-    local y m d s rotate rotated=0 str=''
-    while read y m d s rotate; do
-        (( rotate && ++rotated )) && str='' || str=' not'
-        msg "$destination/$y/$m/$d/$s$str marked"
+    local y m d s tag tagged=0
+    while read y m d s tag; do
+        (( tag && ++tagged ))
+        msg "$destination/$y/$m/$d/$s$(cond $tag '' ' not') tagged"
     done
 
-    (( rotated != 1 )) && str='s'
-    msg "$rotated snapshot$str marked for rotation"
+    msg "$tagged snapshot$(cond $((tagged != 1)) s) tagged for rotation"
 }
 
 rotate_remove() {
-    local y m d s rotate removed=0 str=''
-    while read y m d s rotate; do
-        (( rotate && ++removed )) && {
+    local y m d s tag tagged=0
+    while read y m d s tag; do
+        (( tag && ++tagged )) && {
             $dryrun $sudo btrfs subvolume delete "$destination/$y/$m/$d/$s"
 
             # clean empty subtree
@@ -162,8 +173,7 @@ rotate_remove() {
         }
     done
 
-    (( removed != 1 )) && str='s'
-    msg "$removed snapshot$str removed"
+    msg "$tagged snapshot$(cond $((tagged != 1)) s) removed"
 }
 
 rotate_archive() {
@@ -250,7 +260,7 @@ cmd_find() {
     [[ "$1" == '--no-header' ]] || header 'Finding snapshots'
     shift
 
-    local regex="$@" str=''
+    local regex="$@"
     local -a found
 
     [[ -d "$destination" ]] || error "Destination directory does not exist: \"$destination\""
@@ -258,8 +268,7 @@ cmd_find() {
 
     readarray -t found< <(find . -maxdepth 4 -mindepth 4 -type d | sed -r "s|^\.(.*)|$destination\1|" | sort -dr | grep "$regex")
 
-    (( ${#found[@]} != 1 )) && str='s'
-    msg <<< "${#found[@]} snapshot$str found"
+    msg <<< "${#found[@]} snapshot$(cond $(( ${#found[@]} != 1 )) s) found"
 
     # stdout
     for line in ${!found[@]}; do
@@ -274,14 +283,14 @@ cmd_rotate() {
 
 cmd_remove() {
     header 'Removing snapshots'
-    local snaps str
+    local snaps
     readarray -t snaps< <(cmd_find --no-header "$@")
 
     (( ${#snaps[@]} )) && {
         (( assume_yes )) || {
             printf '%s\n' "${snaps[@]}"
-            (( ${#snaps[@]} > 1 )) && str=them || str=it
-            confirm 'yes|y' "\nRemove ${str}? Enter \"y\" or \"yes\" to confirm: " || unset snaps
+
+            confirm 'yes|y' "\nRemove $(cond $(( ${#snaps[@]} > 1 )) them it)? Enter \"y\" or \"yes\" to confirm: " || unset snaps
             msg ''
         }
     }
