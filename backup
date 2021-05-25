@@ -238,10 +238,10 @@ cmd_snap() {
 
     # if running under sudo, ensure the underlying user has access to the leaf
     [[ -n "$SUDO_USER" ]] && (( ! $EUID )) && {
-        local y m d leaf group="$(getent group $SUDO_GID | cut -d: -f1)"
+        local y m d hhmmss group="$(getent group $SUDO_GID | cut -d: -f1)"
 
-        IFS='/' read y m d leaf <<< "$serial"
-        for dir in "$destination/"{$y/$m/$d,$y/$m,$y}; do
+        IFS='/' read y m d hhmmss <<< "$serial"
+        for dir in "$destination/"{$serial,$y/$m/$d,$y/$m,$y}; do
             $dryrun $sudo chown $flags_verbose "$SUDO_USER":"$group" "$dir"
         done
     }
