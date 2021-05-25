@@ -216,7 +216,7 @@ EOF
 
 cmd_snap() {
     header 'Taking snapshot'
-    local serial="$(date +%Y/%m/%d/%H%M%S)" base="$destination$($sudo btrfs subvolume list -os --sort=ogen "$destination" 2>/dev/null | sed -nr '$s@.*/(([^/]+(/|$)){4})@/\1@p')"
+    local serial="$(date +%Y/%m/%d/%H%M%S)" base="$destination$($sudo btrfs subvolume list -o --sort=ogen "$destination" 2>/dev/null | sed -nr '$s@.*/(([^/]+(/|$)){4})@/\1@p')"
 
     # create the destination btrfs subvolume if it doesn't exist
     # if running under sudo, ensure the underlying user has access to it
