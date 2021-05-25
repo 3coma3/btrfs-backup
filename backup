@@ -156,7 +156,7 @@ rotate_test() {
         msg "$destination/$y/$m/$d/$s$(cond $tag '' ' not') tagged"
     done
 
-    msg "$tagged snapshot$(cond $((tagged != 1)) s) tagged for rotation"
+    msg "$tagged snapshot$(cond "$tagged != 1" s) tagged for rotation"
 }
 
 rotate_remove() {
@@ -173,7 +173,7 @@ rotate_remove() {
         }
     done
 
-    msg "$tagged snapshot$(cond $((tagged != 1)) s) removed"
+    msg "$tagged snapshot$(cond "$tagged != 1" s) removed"
 }
 
 rotate_archive() {
@@ -268,7 +268,7 @@ cmd_find() {
 
     readarray -t found< <(find . -maxdepth 4 -mindepth 4 -type d | sed -r "s|^\.(.*)|$destination\1|" | sort -dr | grep "$regex")
 
-    msg <<< "${#found[@]} snapshot$(cond $(( ${#found[@]} != 1 )) s) found"
+    msg <<< "${#found[@]} snapshot$(cond "${#found[@]} != 1" s) found"
 
     # stdout
     for line in ${!found[@]}; do
@@ -290,7 +290,7 @@ cmd_remove() {
         (( assume_yes )) || {
             printf '%s\n' "${snaps[@]}"
 
-            confirm 'yes|y' "\nRemove $(cond $(( ${#snaps[@]} > 1 )) them it)? Enter \"y\" or \"yes\" to confirm: " || unset snaps
+            confirm 'yes|y' "\nRemove $(cond "${#snaps[@]} > 1" them it)? Enter \"y\" or \"yes\" to confirm: " || unset snaps
             msg ''
         }
     }
