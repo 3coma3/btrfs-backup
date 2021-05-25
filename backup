@@ -117,33 +117,33 @@ tokenize_path() {
               || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
 
-# reads tokenize_path-style lines on stdin, tagging along per $retention policy
+# reads tokenize_path-style input, tagging lines along per $retention policy
 # passing --all will output everything, instead of only those tagged here
 check_retention() {
-    local rest y m d s cd=0 lw=0 cm=0 cy=0 rotate=0 all=$(expr "$1" == '--all')
+    local rest y m d s cd=0 lw=0 cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
-    while read y m d s; do
+    while read y m d s tag; do
         # check retention over leaf snapshot counter (always changes)
-        (( rotate = retention[leafs]-- < 1 ))
+        (( tag = retention[leafs]-- < 1 ))
 
         # check retention when the day has changed
-        (( 10#$cd != 10#$d && (cd = 10#$d, rotate &= retention[days]-- < 1) ))
+        (( 10#$cd != 10#$d && (cd = 10#$d, tag &= retention[days]-- < 1) ))
 
         # if we are more than 6 days before the previous last day of week, then
         # check the week retention, as this is a different week
         [[ "$lw" == "0" ]] || (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
-        && (( rotate &= retention[weeks]-- < 1 ))
+        && (( tag &= retention[weeks]-- < 1 ))
 
         # get last day for the week of the snapshot
         lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +'%F')
 
         # check month and year retention when they change
-        (( 10#$cm != 10#$m && (cm = 10#$m, rotate &= retention[months]-- < 1) ))
-        (( 10#$cy != 10#$y && (cy = 10#$y, rotate &= retention[years]-- < 1) ))
+        (( 10#$cm != 10#$m && (cm = 10#$m, tag &= retention[months]-- < 1) ))
+        (( 10#$cy != 10#$y && (cy = 10#$y, tag &= retention[years]-- < 1) ))
 
-        (( rotate || all )) && echo $y $m $d $s $rotate
+        (( tag || all )) && echo $y $m $d $s $tag
     done
 }
 
