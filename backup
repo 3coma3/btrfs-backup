@@ -120,11 +120,11 @@ tokenize_path() {
 # reads tokenize_path-style input, tagging lines along per $retention policy
 # passing --all will output everything, instead of only those tagged here
 check_retention() {
-    local rest y m d s cd=0 lw=0 cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
+    local rest y m d hms cd=0 lw=0 cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
-    while read y m d s tag; do
+    while read y m d hms tag; do
         # check retention over leaf snapshot counter (always changes)
         (( tag = retention[leafs]-- < 1 ))
 
@@ -143,27 +143,27 @@ check_retention() {
         (( 10#$cm != 10#$m && (cm = 10#$m, tag &= retention[months]-- < 1) ))
         (( 10#$cy != 10#$y && (cy = 10#$y, tag &= retention[years]-- < 1) ))
 
-        (( tag || all )) && echo $y $m $d $s $tag
+        (( tag || all )) && echo $y $m $d $hms $tag
     done
 }
 
 
 # ROTATION HANDLERS ------------------------------------------------------------
 rotate_test() {
-    local y m d s tag tagged=0
-    while read y m d s tag; do
+    local y m d hms tag tagged=0
+    while read y m d hms tag; do
         (( tag && ++tagged ))
-        msg "$destination/$y/$m/$d/$s$(cond $tag '' ' not') tagged"
+        msg "$destination/$y/$m/$d/$hms$(cond $tag '' ' not') tagged"
     done
 
     msg "$tagged snapshot$(cond "$tagged != 1" s) tagged for rotation"
 }
 
 rotate_remove() {
-    local y m d s tag tagged=0
-    while read y m d s tag; do
+    local y m d hms tag tagged=0
+    while read y m d hms tag; do
         (( tag && ++tagged )) && {
-            $dryrun $sudo btrfs subvolume delete "$destination/$y/$m/$d/$s"
+            $dryrun $sudo btrfs subvolume delete "$destination/$y/$m/$d/$hms"
 
             # clean empty subtree
             # FIXME: output will be inaccurate in dry mode as we can't remove parents
@@ -238,9 +238,9 @@ cmd_snap() {
 
     # if running under sudo, ensure the underlying user has access to the leaf
     [[ -n "$SUDO_USER" ]] && (( ! $EUID )) && {
-        local y m d hhmmss group="$(getent group $SUDO_GID | cut -d: -f1)"
+        local y m d hms group="$(getent group $SUDO_GID | cut -d: -f1)"
 
-        IFS='/' read y m d hhmmss <<< "$serial"
+        IFS='/' read y m d hms <<< "$serial"
         for dir in "$destination/"{$serial,$y/$m/$d,$y/$m,$y}; do
             $dryrun $sudo chown $flags_verbose "$SUDO_USER":"$group" "$dir"
         done
