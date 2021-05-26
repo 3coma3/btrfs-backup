@@ -120,7 +120,7 @@ tokenize_path() {
 # reads tokenize_path-style input, tagging lines along per $retention policy
 # passing --all will output everything, instead of only those tagged here
 check_retention() {
-    local rest y m d hms cd=0 lw=0 cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
+    local rest y m d hms cd=0 lw='' cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
@@ -133,7 +133,7 @@ check_retention() {
 
         # if we are more than 6 days before the previous last day of week, then
         # check the week retention, as this is a different week
-        [[ "$lw" == "0" ]] || (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
+        [[ -n "$lw" ]] && (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
         && (( tag &= retention[weeks]-- < 1 ))
 
         # get last day for the week of the snapshot
