@@ -365,7 +365,7 @@ get_config() {
     echo "$file"
 }
 
-go() {
+cmdline() {
     local token numtokens=$# skip_else
     local -a commands=()
     local -A command_args=()
@@ -442,4 +442,4 @@ EOF
 
 init basics
 msg "$script_title $script_version\n"
-go $@
+cmdline $@
