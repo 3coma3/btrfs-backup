@@ -2,65 +2,85 @@
 
 ### Installation
 
-The script is contained in the file `backup` in this repo. You'll want to give it proper ownership, execution permissions, and have it in your $PATH (or invoke it with some path, as you prefer). Running from a symlink is supported, as the script detects its real location.
+The script is contained in the file `backup` in this repo. You'll want to give it proper ownership, execution permissions, and have it in your `PATH` (or invoke it with some path, as you prefer). Running from a symbolic link is supported, the script will detect its real location.
 
 
 ### Configuration
 
-Config variables are declared in the CONFIG DECLARATION AND DEFAULTS section at the top of the script. This is also where any defaults may be set.
+Configuration variables are declared in the `CONFIG DECLARATION AND DEFAULTS` section at the top of the script. This is also where any defaults may be set.
 
-Custom configuration files, placed in the same directory as this script, can set (or override) the configuration variables as needed, for different backup applications. I include the two that I use at my laptop:
+Custom configuration files can be used to provide the variables, and will override any defaults defined above. The configuration file to use can be specified in the `config` variable or by passing the `-c` option to the script (see below for details).
+
+The configuration files are useful to define different backup applications. As examples, I provide two that I've used at my laptop, you can find them under the `/config` subdirectory:
 
 `full.conf`
-Defines a full system backup stored on an external drive, to be issued manually
+Defines a full system backup stored on an external drive, intended to be issued manually
 
 `homesnaps.conf`
-Defines home directory snapshots (also stored under $HOME) that are issued via cron, hourly
+Defines home directory snapshots (also stored under $HOME) that I issue hourly via cron
 
 
-The configuration variables:
+
+> **Note**
+>
+> Configuration files override the variables defined in the script, and command line options (where applicable) take precedence over both the configuration files and the script defaults.
+
+
+
+**Configuration variables:**
+
+`config_search`
+This array holds the locations where a configuration file (specified by the `config` variable or by using the `-c` option), will be searched *when the file was not specified with a full or relative path*. That is, when only a file name was specified, with no directory information.
+
+These locations are the default, but can be modified as needed (the array is initialized at the `init()` function):
+
+* The directory where the script is stored
+* A `/config` subdirectory at the above location
+* The current directory
+
+`config`
+This can hardcode the configuration file to use. It can be a full path, a relative path or a "naked file name", ending optionally with the `.conf` suffix. Files specified with just the name are searched relative to the locations (and in the order) specified in `config_search`.
+
+The `-c` option overrides this variable
 
 `destination`
-
 This is an (absolute) path to a btrfs subvolume. The script will attempt to create it if it doesn't exist. Note that by default this location is ommited from backups, although this can be overriden with an rsync filter rule consisting of a ! (bang) character, ie, the List Clearing Filter Rule.
 
-
 `sources`
-
 This is an array where each entry is a bash "glob" path expansion expression, pointing to a filesystem portion you want to back up.
 
 Examples of valid glob expressions are:
 
+```bash
 */home*
-
+```
 Simple paths are valid globs. This would include the /home directory in the list of files to backup
 
+```bash
 */home/*
-
+```
 This would include every subdirectory or file under /home
 
+```bash
 */home/user/{b,d,m,p,s,t,v,w}*
-
+```
 This would include any file or subdirectory under /home/user, that starts with the letters b, d, m, p, s, t, v or w
 
+```bash
 */home/user/{bash,cinnamon,config,dmrc,fzf,g{conf,i{mp,t},n{ome,upg},tkrc},icons,l{inuxmint,ocal},m{ozilla,ysql},p{rofile,utty},ssh,th{emes,underbird},vim,znc}*
-
+```
 This is a complex expression that illustrates nesting
 
-Full documentation of the syntax is available in the bash man page, or easily found around the web. Similar examples are already included in the provided configurations (these are in fact the paths I regularly make backups of).
+Full documentation of the syntax is available in the bash man page, or easily found around the web (I recommend the reference at the [Wooledge Wiki](https://mywiki.wooledge.org/glob), or the Bash Hacker's Wiki).
 
-It isn't necessary though to put each and every item you want to backup in the `sources` list. It's better to list there only the *top level* items, and then use the `filters` array to refine what's included and excluded.
-
+Similar examples are already included in the provided configurations (and those are in fact paths I regularly make backups of). It isn't necessary though to put each and every item you want to backup in the `sources` list. It's better to list there only the *top level* items, and then use the `filters` array to refine what's included and excluded.
 
 `filters`
-
 This is an associative array, whose keys may include any *value* in the `sources` array.
 
 When backing up a `sources` entry, the matching `filters` entry is passed to rsync. The value portion of a `filters` entry is a multiline string where each line begins with "-" to exclude an item or "+" to force inclusion. The full documentation for the filters behaviour is available in the rsync manual. You can also check out some filters in the included sample configurations, they are pretty simple to use.
 
-
 `retention`
-
 This associative array describes your *retention policy*. Basically you say how many snapshots you want to keep per discrete snapshot, different day, different week, different month and different year.
 
 The retention policy sets the rules to follow when you have to determine whether it is not necessary anymore to keep a specific snapshot. Say for example that your policy is a simple "keep the last 10 snapshots". When you get to make more than that amount of snapshots, the policy checker will mark the oldest snapshot for rotation.
@@ -69,35 +89,24 @@ What specifically is done when something is marked for rotation, depends on the 
 
 More on this on the section dedicated to retention policy down this document.
 
-
-`rotate_action`
-
-As stated above, this variable specifies what to do when a retention check decides to mark a specific snapshot for rotation for it to comply with the current policy. The only useful value here as of now is 'remove'. Rotation handlers are just bash functions with names like rotate_`name`, where `name` is the part that can be selected in the `rotate_action` variable.
-
+`rotate_handler`
+As stated above, this variable specifies what to do when a retention check decides to mark a specific snapshot for rotation for it to comply with the current policy. The only useful value here as of now is 'remove'. Rotation handlers are just bash functions with names like rotate_`name`, where `name` is the part that can be selected in the `rotate_handler` variable.
 
 `weekstart`
-
 This is used by the retention policy checks and should be set to whatever is the first day of the week where you live. Here 1 means monday, and 7 means sunday.
 
-
 `dryrun`
-
 You'll probably be using this variable dynamically, through the `-d` command line switch. Its value is prepended at any line in the script where an operation that "changes things" is to be performed, (anything that writes anything in any way). The `-d` switch sets it to something similar to 'echo'. Here you can hardcode it to something in particular, should you need that.
 
-
-`config`
-
-This variable is set by the `-c` switch, and should point to a configuration file name that exists in the same directory as the script. 
-
-
 `rsyncflags`
-
 These are the recommended rsync flags used when updating a snapshot. Tune as needed.
 
+`flags_verbose`
+
+These are the flags that control verbosity for most commands that are used by the script. They are turned off with the `-q` switch.
 
 `rsyncflags_verbose`
-
-These are the rsync flags that control verbosity. They are turned off with the `-q` switch to tune down the script output which is in great part affected by long rsync updates.
+Same as above, but specifically for rsync (as it has many options for verbosity). This is good to control the script output when using long rsync updates. It's also turned off with `-q`.
 
 
 ###  Invocation
@@ -105,7 +114,7 @@ These are the rsync flags that control verbosity. They are turned off with the `
 #### Actions
 `help`
 It will print a quick help for reference
- 
+
 `snap`
 Will setup the base location for the snapshots if this is the first run, and then diligently rsync the files to the first snapshot. Subsequent invocations will base the new snapshots on the last one available.
 
@@ -141,15 +150,14 @@ and so on.
 `-h`
 An alias to `help`
 
-
 `-c config`
-Use it to select which configuration file to load
+Configuration file to load, same logic as with the `config` variable.
 
 `-d`
-It prepends an 'echo' to any modifying operation, making the script to print those actions on the screen instead of running them.
+It prevents the script to perform any actual operation, making it to print the actions that would be performed on the screen instead.
 
 `-q`
-Currently, it restricts a bit the rsync output in normal situations. In future updates the verbosity controls may become more powerful. Note that most script messages are outputted to standard error, so they affect its "pipeable" output to a minimum.
+Currently, it restricts a bit the rsync output in normal situations and some other commands. In future updates the verbosity controls may become more powerful. Note that most script messages are outputted to standard error, so they affect its "pipeable" output to a minimum.
 
 `-y`
 Assume 'yes' for questions. This is useful for automated invocations. Note that the script also accepts piped output from the "yes" command.
