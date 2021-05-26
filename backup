@@ -8,29 +8,20 @@ shopt -s extglob
 # disable file globbing so things like * can be used for regexps
 set -f
 
-export script_name="$0"
-export script_dir="$(dirname $(readlink -f "$0"))"
-
-# some btrfs subcommands need to be run as root with the help of sudo
-# skip this when the script is already run as root, as this might not be allowed
-if [[ $EUID -eq 0 ]]; then
-    export sudo=''
-else
-    export sudo='sudo'
-fi
-
-# the usual flag for verbose mode in many commands (-q sets it to '')
-export flags_verbose='-v'
-
-# character used for header lines
-export header_char='~'
-
+# these globals are always set at init()
+export script_name script_dir script_title script_version header_char sudo
 
 # CONFIG DECLARATION AND DEFAULTS ----------------------------------------------
-# defaults set here can be overridden at external config files via -c or $config
+# this for now also needs to be adjusted at the init() function
+export -a config_search=()
 
-# name of a configuration file stored in the same directory as this script
-# can be set by passing -c <name.conf> or hardcoded here
+# defaults below can be overridden at external configurations, some of them also
+# by command line options
+
+# name of a configuration file, can be a full/relative path or name alone
+# naked filenames are searched as specified in $config_search, and may omit the
+# ".conf" ending, as the script will attempt to detect files with either name
+# command line override: -c
 export config=''
 
 # path to a btrfs subvolume (NOT a root volume), for snapshot storage
@@ -54,11 +45,16 @@ export rotate_handler='remove'
 # 1=mon, 7=sun
 export weekstart=7
 
-# can be set by passing -d on the command line, or hardcoded to ex. 'echo'
+# prefix for commands in dryrun mode
+# command line override: -d (sets to 'msg')
 export dryrun=''
 
 # recommended rsync flags, tune as needed (-q sets $rsyncflags_verbose to '')
 export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force'
+
+# flags for verbose mode in commands
+# command line override: -q (unsets)
+export flags_verbose='-v'
 export rsyncflags_verbose='-hvv --progress'
 
 
@@ -315,6 +311,60 @@ cmd_test() {
 
 
 # MAIN -------------------------------------------------------------------------
+init() {
+    for section in "$@"; do
+        case $section in
+            basics)
+                # basic information about the script
+                script_title="btrfs-backup"
+                script_name="$0"
+                script_dir="$(dirname $(readlink -f "$0"))"
+                [[ -f "$script_dir/VERSION" ]] && {
+                    read script_version < "$script_dir/VERSION"
+                }
+
+                # locations to search for config files without path specification
+                config_search+=("$script_dir")
+                config_search+=("$script_dir/config")
+                config_search+=('.')
+                ;;
+
+            globals)
+                # character used for header lines
+                header_char='~'
+
+                # some btrfs subcommands need to be run as root with the help of sudo
+                # skip this when the script is already run as root, as this might not be allowed
+                if [[ $EUID -eq 0 ]]; then
+                    sudo=''
+                else
+                    sudo='sudo'
+                fi
+                ;;
+        esac
+    done
+}
+
+get_config() {
+    local file="$@"
+
+    # naked file name:
+    # search for files with/without .conf ending at $config_search locations
+    [[ ! "$@" =~ ^[./].* ]] && {
+        for location in "${config_search[@]}"; do
+            if [[ -f "$location/$@" ]]; then
+                file="$location/$@"
+            elif [[ -f "$location/${@}.conf" ]]; then
+                file="$location/${@}.conf"
+            fi
+        done
+    }
+
+    [[ -f "$file" ]] || error "Configuration file not found: \"$@\""
+
+    echo "$file"
+}
+
 go() {
     local token numtokens=$# skip_else
     local -a commands=()
@@ -347,7 +397,7 @@ EOF
                 ;;
 
             -c) (( $# )) || error 'Expected a config file name after -c'
-                export config="$script_dir/$1"
+                export config="$1"
                 shift
                 ;;
 
@@ -374,10 +424,15 @@ EOF
 
     (( ${#commands[@]} )) || error 'Please specify a command, or -h for help'
 
-    # globals in these files override the defaults set at the top of this script
-    [[ -f "$config" ]] && . "$config" || error "Configuration file not found: \"$config\""
+    [[ -n "$config" ]] && {
+        config="$(get_config "$config")" || exit $?
 
-    # and command line arguments override the globals in config files
+        msg "Using configuration file: $config\n"
+        . "$config"
+    }
+
+    init basics globals
+
     [[ -n "$dryrun" ]] && msg 'DRY-RUN MODE - this is a simulation\n'
 
     for cmd in ${!commands[@]}; do
@@ -385,4 +440,6 @@ EOF
     done
 }
 
+init basics
+msg "$script_title $script_version\n"
 go $@
