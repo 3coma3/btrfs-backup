@@ -25,7 +25,7 @@ So I wrote this little piece and I've been pretty happy with the results:
 ## Features
 
 * Plain bash. No DSL, no complex parameters, no nothing
-* ~250 lines of code omitting config, comments and blank lines
+* ~300 lines of code omitting config, comments and blank lines
 * No impositions. It may be used as needed, manually or via cron. It does its job and gets out of the way.
 * Does Incremental, in place, COW powered snapshots out of any file system Rsync can read, courtesy of Btrfs
 * Custom GFS-style rotation algorithm to maintain arbitrary copies at the snapshot, day, week, month and year levels
@@ -33,3 +33,4 @@ So I wrote this little piece and I've been pretty happy with the results:
 * Compact per-data-source filter specification in rsync's own [pattern syntax](https://manpages.ubuntu.com/manpages/eoan/en/man1/rsync.1.html#include/exclude%20pattern%20rules)
 * Queued operations
 * Dry-run mode
+* Global defaults / config file / command line option overrides
