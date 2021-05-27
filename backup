@@ -65,10 +65,7 @@ msg() {
         return
     }
 
-    local msg
-    while read msg; do
-        echo -e "$msg"
-    done >&2
+    cat>&2
 }
 
 error() {
