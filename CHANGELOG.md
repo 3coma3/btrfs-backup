@@ -1,4 +1,9 @@
 ## Changelog
+**v1.4.0:**
+* Begin to use semantic versioning starting with this release
+* Enhanced config file specification and multiple-location search
+* Minor updates and improvements
+
 **v1.3:**
 * Bugfixes
 * Minor improvements
