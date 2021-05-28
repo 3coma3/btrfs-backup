@@ -1,22 +1,22 @@
 #!/bin/bash
 
 # BASICS -----------------------------------------------------------------------
-
 # extended globbing is needed for arg parsing and source/filter expressions
 shopt -s extglob
 
 # disable file globbing so things like * can be used for regexps
 set -f
 
-# these globals are always set at init()
-export script_name script_dir script_title script_version header_char sudo
+# basic info set at init(), not considered configuration
+export script_name script_dir script_title script_version sudo
+
 
 # CONFIG DECLARATION AND DEFAULTS ----------------------------------------------
 # this for now also needs to be adjusted at the init() function
 export -a config_search=()
 
-# defaults below can be overridden at external configurations, some of them also
-# by command line options
+# defaults below can be overridden by external config and (in some cases) by
+# command line options
 
 # name of a configuration file, can be a full/relative path or name alone
 # naked filenames are searched as specified in $config_search, and may omit the
@@ -39,7 +39,7 @@ export -A retention=( [leafs]=15 [days]=30 [weeks]=24 [months]=12 [years]=5 )
 
 # what to do when a snapshot is marked for rotation by the retention checks
 # so far only "test" and "remove" are implemented
-export rotate_handler='remove'
+export rotate_handler=remove
 
 # used in the weekly retention checks
 # 1=mon, 7=sun
@@ -57,6 +57,8 @@ export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-dela
 export flags_verbose='-v'
 export rsyncflags_verbose='-hvv --progress'
 
+# character used for header lines
+export header_char='~'
 
 # STANDARD I/O -----------------------------------------------------------------
 msg() {
@@ -313,9 +315,9 @@ init() {
         case $section in
             basics)
                 # basic information about the script
-                script_title="btrfs-backup"
                 script_name="$0"
                 script_dir="$(dirname $(readlink -f "$0"))"
+                script_title="btrfs-backup"
                 [[ -f "$script_dir/VERSION" ]] && {
                     read script_version < "$script_dir/VERSION"
                 }
@@ -325,10 +327,6 @@ init() {
                 config_search+=("$script_dir/config")
                 config_search+=('.')
                 ;;
-
-            globals)
-                # character used for header lines
-                header_char='~'
 
                 # some btrfs subcommands need to be run as root with the help of sudo
                 # skip this when the script is already run as root, as this might not be allowed
@@ -428,7 +426,7 @@ EOF
         . "$config"
     }
 
-    init basics globals
+    init basics
 
     [[ -n "$dryrun" ]] && msg 'DRY-RUN MODE - this is a simulation\n'
 
