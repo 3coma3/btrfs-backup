@@ -254,8 +254,9 @@ cmd_snap() {
 }
 
 cmd_find() {
-    [[ "$1" == '--no-header' ]] || header 'Finding snapshots'
-    shift
+    if [[ "$1" == '--no-header' ]]; then shift
+    else header 'Finding snapshots'
+    fi
 
     local regex="$@"
     local -a found
