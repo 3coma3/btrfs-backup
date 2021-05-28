@@ -323,6 +323,10 @@ init() {
                     read script_version < "$script_dir/VERSION"
                 }
 
+                # some btrfs subcommands need to be run as root via sudo
+                # skip when we already are root, as then it might not be allowed
+                sudo=$(cond $EUID sudo '')
+
                 # locations where to search for config files
                 config_locations+=("$script_dir")
                 config_locations+=("$script_dir/config")
@@ -333,13 +337,6 @@ init() {
                 config_suffixes+=(.conf)
                 config_suffixes+=(.cf)
 
-                # some btrfs subcommands need to be run as root with the help of sudo
-                # skip this when the script is already run as root, as this might not be allowed
-                if [[ $EUID -eq 0 ]]; then
-                    sudo=''
-                else
-                    sudo='sudo'
-                fi
                 ;;
         esac
     done
