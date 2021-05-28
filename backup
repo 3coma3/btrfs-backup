@@ -94,7 +94,7 @@ cond() {
     local expr="$1" txt="$2"
     shift 2
 
-    if (( $(expr "$expr") )); then
+    if { expr "$expr" > /dev/null ;}; then
         echo -ne "$txt"
     else
         echo -ne "$@"
