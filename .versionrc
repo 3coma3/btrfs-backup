@@ -1,0 +1,19 @@
+{
+    "packageFiles": [
+        {
+        "filename": "VERSION",
+        "type": "plain-text"
+        }
+    ],
+    "types": [
+        {"type": "feature", "section": "Features"},
+        {"type": "improve", "section": "Improvements"},
+        {"type": "fix", "section": "Bug Fixes"},
+        {"type": "chore", "hidden": true},
+        {"type": "docs", "hidden": true},
+        {"type": "style", "hidden": true},
+        {"type": "refactor", "hidden": true},
+        {"type": "perf", "hidden": true},
+        {"type": "test", "hidden": true}
+    ]
+}
