@@ -11,16 +11,16 @@ set -f
 export script_name script_dir script_title script_version sudo
 
 
-# CONFIG DECLARATION AND DEFAULTS ----------------------------------------------
-# this for now also needs to be adjusted at the init() function
-export -a config_search=()
+# CONFIGURATION ----------------------------------------------------------------
+# these are "basic configuration", needed to load external config files
+# tune them at init()
+export -a config_locations=() config_suffixes=()
 
 # defaults below can be overridden by external config and (in some cases) by
 # command line options
 
-# name of a configuration file, can be a full/relative path or name alone
-# naked filenames are searched as specified in $config_search, and may omit the
-# ".conf" ending, as the script will attempt to detect files with either name
+# config file to use: full/relative path or just the name, in the latter case
+# the file will be searched for as specified in the config_* arrays above
 # command line override: -c
 export config=''
 
@@ -322,11 +322,15 @@ init() {
                     read script_version < "$script_dir/VERSION"
                 }
 
-                # locations to search for config files without path specification
-                config_search+=("$script_dir")
-                config_search+=("$script_dir/config")
-                config_search+=('.')
-                ;;
+                # locations where to search for config files
+                config_locations+=("$script_dir")
+                config_locations+=("$script_dir/config")
+                config_locations+=('.')
+
+                # file suffixes to use when searching
+                config_suffixes+=('')
+                config_suffixes+=(.conf)
+                config_suffixes+=(.cf)
 
                 # some btrfs subcommands need to be run as root with the help of sudo
                 # skip this when the script is already run as root, as this might not be allowed
@@ -343,19 +347,17 @@ init() {
 get_config() {
     local file="$@"
 
-    # naked file name:
-    # search for files with/without .conf ending at $config_search locations
+    # naked name: search files ending in $config_suffixes at $config_locations
     [[ ! "$@" =~ ^[./].* ]] && {
-        for location in "${config_search[@]}"; do
-            if [[ -f "$location/$@" ]]; then
-                file="$location/$@"
-            elif [[ -f "$location/${@}.conf" ]]; then
-                file="$location/${@}.conf"
-            fi
+        for location in "${config_locations[@]}"; do
+            for suffix in "${config_suffixes[@]}"; do
+                file="$location/${@}${suffix}"
+                [[ -f "$file" ]] && break 2
+            done
         done
     }
 
-    [[ -f "$file" ]] || error "Configuration file not found: \"$@\""
+    [[ ! -f "$file" ]] && error "Configuration file not found: \"$@\""
 
     echo "$file"
 }
