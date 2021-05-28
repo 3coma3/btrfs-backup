@@ -60,7 +60,8 @@ export rsyncflags_verbose='-hvv --progress'
 # character used for header lines
 export header_char='~'
 
-# STANDARD I/O -----------------------------------------------------------------
+
+# I/O --------------------------------------------------------------------------
 msg() {
     (( $# )) && {
         echo -e "$@" >&2
@@ -131,7 +132,7 @@ check_retention() {
         [[ -n "$lw" ]] && (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
         && (( tag &= retention[weeks]-- < 1 ))
 
-        # get last day for the week of the snapshot
+        # get last day of week for this snapshot's date, check at next iteration
         lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +'%F')
 
         # check month and year retention when they change
