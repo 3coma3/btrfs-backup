@@ -297,18 +297,25 @@ cmd_remove() {
 
 cmd_test() {
     header 'Testing retention policy'
-    local count=${1:-0} leapfeb yr=1.3 y m d h mi
+    local -A results
+    local count=${1:-0} new leapfeb yr=1.3 y m d h mi
     local daysmonth=( 31 28 31 30 31 30 31 31 30 31 30 31 )
 
     # year range: ensure retention years are > 0 and factor by $yr
     yr=$(LC_NUMERIC="en_US.UTF-8" printf "%.0f" $(bc <<< "(${retention[years]} + 1) * $yr"))
 
-    while (( count-- )); do
-        (( y = RANDOM % yr + $(date +%Y) - yr, m = RANDOM % 12 + 1 ))
+    while (( count )); do
+        (( y = RANDOM % (yr + 1) + $(date +%Y) - yr, m = RANDOM % 12 + 1 ))
         (( leapfeb = ! (y % 4 || ! y % 100 && y % 400) && m == 2 ))
         (( d = RANDOM % (daysmonth[m - 1] + leapfeb) + 1 ))
         (( h = RANDOM % 23 + 1, mi = RANDOM % 59 + 1 ))
-        printf "$destination/%02d/%02d/%02d/%02d%02d\n" $y $m $d $h $mi
+
+        new="$(printf "%02d/%02d/%02d/%02d%02d" $y $m $d $h $mi)"
+        [[ -z "${results[$new]:-}" ]] && {
+            results[$new]=''
+            echo "$destination/$new"
+            (( count-- ))
+        }
     done | sort -dr | tokenize_path | check_retention --all | rotate_test
 }
 
