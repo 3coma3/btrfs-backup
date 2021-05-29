@@ -79,7 +79,7 @@ error() {
 header() {
     local tmp="${@}" length=80
     local header=$(printf "%0$(( length - ${#tmp} ))d")
-    msg "$@ ${header//?/${header_char}}\n"
+    msg "\n$@ ${header//?/${header_char}}\n"
 }
 
 confirm() {
@@ -250,7 +250,6 @@ cmd_snap() {
         readarray -t rsyncfilters< <(sed '/^$/d' <<< "${filters["$source"]}")
         $dryrun rsync $rsyncflags $rsyncflags_verbose --filter="-/s $destination" "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
     done
-    msg ''
 }
 
 cmd_find() {
@@ -426,7 +425,7 @@ EOF
     [[ -n "$config" ]] && {
         config="$(get_config "$config")" || exit $?
 
-        msg "Using configuration file: $config\n"
+        msg "Using configuration file: $config"
         . "$config"
     }
 
