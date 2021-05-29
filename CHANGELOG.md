@@ -1,3 +1,21 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [1.4.1](https://github.com/3coma3/btrfs-backup/compare/v1.4.0...v1.4.1) (2021-05-29)
+
+
+### Bug Fixes
+
+* bug in find() with --no-header ([62bb2e9](https://github.com/3coma3/btrfs-backup/commit/62bb2e97435ebcf763561850a1e96abe2252112b))
+
+
+### Improvements
+
+* configurable suffixes for file search ([54f26b8](https://github.com/3coma3/btrfs-backup/commit/54f26b89f18b866af4d6581ba8c690c74f0340b4))
+* FIXME and others in cmd_test() ([9a2ae38](https://github.com/3coma3/btrfs-backup/commit/9a2ae380ad46a0b180640923f862e9e8a37c0b36))
+* sudo-as-root prevention code ([f2d1bd0](https://github.com/3coma3/btrfs-backup/commit/f2d1bd0586d2c8f2aaae8ce106deee50d30a9a82))
+
 ### [1.4.0](https://github.com/3coma3/btrfs-backup/compare/v1.4...v1.3) (2021-05-27)
 
 * Begin to use semantic versioning starting with this release
