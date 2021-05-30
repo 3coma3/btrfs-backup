@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.3](https://github.com/3coma3/btrfs-backup/compare/v1.4.2...v1.4.3) (2021-05-30)
+
+
+### Bug Fixes
+
+* race condition in cmd_snap() ([33cde61](https://github.com/3coma3/btrfs-backup/commit/33cde614deb576cc2e1330d433d3b822d5e86c41))
+* remove duplicates in cmd_test() ([37bb051](https://github.com/3coma3/btrfs-backup/commit/37bb051180994087e48514c12f09d91d6266a01f))
+
 ### [1.4.2](https://github.com/3coma3/btrfs-backup/compare/v1.4.1...v1.4.2) (2021-05-29)
 
 ### [1.4.1](https://github.com/3coma3/btrfs-backup/compare/v1.4.0...v1.4.1) (2021-05-29)
