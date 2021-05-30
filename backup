@@ -120,7 +120,7 @@ tokenize_path() {
 check_retention() {
     local rest y m d hms cd=0 lw='' cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
-    msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
+    (( ! quiet )) && msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
     while read y m d hms tag; do
         # check leaf counter retention (always changes)
