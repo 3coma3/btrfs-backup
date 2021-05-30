@@ -68,7 +68,7 @@ msg() {
         return
     }
 
-    cat>&2
+    cat >&2
 }
 
 error() {
@@ -113,15 +113,15 @@ tokenize_path() {
               || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
 
-# reads tokenize_path-style input, tagging lines along per $retention policy
-# passing --all will output everything, instead of only those tagged here
+# filter tokenize_path-style input, tagging lines along per $retention policy
+# with --all it outputs everything, instead of only tagged lines
 check_retention() {
     local rest y m d hms cd=0 lw='' cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
     while read y m d hms tag; do
-        # check retention over leaf snapshot counter (always changes)
+        # check retention over the leaf counter (always changes)
         (( tag = retention[leafs]-- < 1 ))
 
         # check retention when the day has changed
@@ -212,6 +212,7 @@ EOF
 
 cmd_snap() {
     header 'Taking snapshot'
+
     local serial="$(date +%Y/%m/%d/%H%M%S)" base="$destination$($sudo btrfs subvolume list -o --sort=ogen "$destination" 2>/dev/null | sed -nr '$s@.*/(([^/]+(/|$)){4})@/\1@p')"
 
     [[ "$base" == "$destination/$serial" ]] && error "Refusing to create a new snapshot with serial $serial"
@@ -277,11 +278,13 @@ cmd_find() {
 
 cmd_rotate() {
     header "Applying retention policy (\"$rotate_handler\" rotation handler)"
+
     cmd_find --no-header '.*' | tokenize_path | check_retention | rotate_${rotate_handler}
 }
 
 cmd_remove() {
     header 'Removing snapshots'
+
     local snaps
     readarray -t snaps< <(cmd_find --no-header "$@")
 
@@ -299,6 +302,7 @@ cmd_remove() {
 
 cmd_test() {
     header 'Testing retention policy'
+
     local -A results
     local count=${1:-0} new leapfeb yr=1.3 y m d h mi
     local daysmonth=( 31 28 31 30 31 30 31 31 30 31 30 31 )
