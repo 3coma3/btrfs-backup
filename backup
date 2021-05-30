@@ -9,6 +9,8 @@ set -f
 
 # basic info set at init(), not considered configuration
 export script_name script_dir script_title script_version sudo
+export tag_types
+export -A tags=()
 
 
 # CONFIGURATION ----------------------------------------------------------------
@@ -141,6 +143,20 @@ check_retention() {
 
         (( tag || all )) && echo $y $m $d $hms $tag
     done
+}
+
+tag_info() {
+    local tag="$1" result=''
+
+    for t in $tag_types; do
+        (( tags[$t] & tag )) && result="$result$t,"
+    done
+
+    if [[ -n "$result" ]]; then
+        echo "${result:0: -1}"
+    else
+        echo "unknown tag"
+    fi
 }
 
 
@@ -352,7 +368,15 @@ init() {
                 config_suffixes+=('')
                 config_suffixes+=(.conf)
                 config_suffixes+=(.cf)
+                ;;
 
+            tags)
+                tag_types="leaf day week month year manual test"
+
+                # array of values for bitmapped tags
+                for t in $tag_types; do
+                    (( tags[$t] = 2 ** ${#tags[@]} ))
+                done
                 ;;
         esac
     done
@@ -442,7 +466,7 @@ EOF
         . "$config"
     }
 
-    init basics
+    init basics tags
 
     [[ -n "$dryrun" ]] && msg 'DRY-RUN MODE - this is a simulation\n'
 
