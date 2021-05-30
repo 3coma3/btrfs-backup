@@ -110,7 +110,7 @@ cond() {
 # tag must be an integer, it will likely be used in the future to encode
 # rotation level / misc info using bit maps
 tokenize_path() {
-    local tag=$(( $(expr "$1" == '--tag') ? ${2:-1} : 0 ))
+    local tag=$(( $(expr "$1" == '--tag') ? ${2:-${tags[manual]}} : 0 ))
     (( tag )) && sed -re "s|^$destination/(.*)$|\1 $tag|" -e 's|/| |g' \
               || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
