@@ -165,7 +165,7 @@ rotate_test() {
     local y m d hms tag tagged=0
     while read y m d hms tag; do
         (( tag && ++tagged ))
-        msg "$destination/$y/$m/$d/$hms$(cond $tag '' ' not') tagged"
+        msg "$destination/$y/$m/$d/$hms$(cond $tag '' ' not') tagged$(cond $tag " ($(tag_info $tag))")"
     done
 
     msg "$tagged snapshot$(cond "$tagged != 1" s) tagged for rotation"
