@@ -368,6 +368,8 @@ init() {
                 config_suffixes+=('')
                 config_suffixes+=(.conf)
                 config_suffixes+=(.cf)
+
+                (( quiet = ${quiet:-0} ))
                 ;;
 
             tags)
@@ -441,6 +443,7 @@ EOF
 
             -q) export rsyncflags_verbose=''
                 export flags_verbose=''
+                quiet=1
                 ;;
 
             -y) assume_yes=1
