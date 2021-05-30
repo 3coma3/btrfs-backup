@@ -214,6 +214,8 @@ cmd_snap() {
     header 'Taking snapshot'
     local serial="$(date +%Y/%m/%d/%H%M%S)" base="$destination$($sudo btrfs subvolume list -o --sort=ogen "$destination" 2>/dev/null | sed -nr '$s@.*/(([^/]+(/|$)){4})@/\1@p')"
 
+    [[ "$base" == "$destination/$serial" ]] && error "Refusing to create a new snapshot with serial $serial"
+
     # create the destination btrfs subvolume if it doesn't exist
     [[ ! -d "$destination" ]] && {
         $dryrun btrfs subvolume create "$base"
