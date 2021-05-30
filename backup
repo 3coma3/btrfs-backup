@@ -172,16 +172,21 @@ rotate_test() {
 }
 
 rotate_remove() {
-    local y m d hms tag tagged=0
+    local snap y m d hms tag tagged=0
     while read y m d hms tag; do
+        snap="$destination/$y/$m/$d/$hms"
+
         (( tag && ++tagged )) && {
-            $dryrun $sudo btrfs subvolume delete "$destination/$y/$m/$d/$hms"
+            (( ! quiet )) && msg "$snap$(cond $tag '' ' not') is tagged$(cond $tag " ($(tag_info $tag))")"
+
+            $dryrun $sudo btrfs subvolume delete "$snap"
 
             # clean empty subtree
             # FIXME: output will be inaccurate in dry mode as we can't remove parents
             for dir in "$destination/"{$y/$m/$d,$y/$m,$y}; do
                 [[ -z "$(ls -A "$dir")" ]] && $dryrun rmdir $flags_verbose "$dir"
             done
+            (( ! quiet )) && msg "Removed $snap\n"
         }
     done
 
