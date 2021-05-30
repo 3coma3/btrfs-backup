@@ -115,31 +115,31 @@ tokenize_path() {
               || sed -re "s|^$destination/(.*)$|\1|" -e 's|/| |g'
 }
 
-# filter tokenize_path-style input, tagging lines along per $retention policy
-# with --all it outputs everything, instead of only tagged lines
+# filter tokenize_path-compatible input, a list of dates in descending order
+# lines are tagged/cleared depending on which $retention rules have/n't expired
 check_retention() {
     local rest y m d hms cd=0 lw='' cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
     while read y m d hms tag; do
-        # check retention over the leaf counter (always changes)
-        (( tag = retention[leafs]-- < 1 ))
+        # check leaf counter retention (always changes)
+        (( tag = (retention[leafs]-- < 1) * (tag | tags[leaf]) ))
 
-        # check retention when the day has changed
-        (( 10#$cd != 10#$d && (cd = 10#$d, tag &= retention[days]-- < 1) ))
+        # check day retention when it has has changed
+        (( 10#$cd != 10#$d && (cd = 10#$d, tag = (((retention[days]-- < 1) && tag) * (tag | tags[day]))) ))
 
-        # if we are more than 6 days before the previous last day of week, then
+        # if we are past 6 days to the end of the previous snapshot week, then
         # check the week retention, as this is a different week
         [[ -n "$lw" ]] && (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
-        && (( tag &= retention[weeks]-- < 1 ))
+        && (( tag = (((retention[weeks]-- < 1) && tag) * (tag | tags[week])) ))
 
-        # get last day of week for this snapshot's date, check at next iteration
+        # get last day for this snapshot's week, will check at next iteration
         lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +'%F')
 
-        # check month and year retention when they change
-        (( 10#$cm != 10#$m && (cm = 10#$m, tag &= retention[months]-- < 1) ))
-        (( 10#$cy != 10#$y && (cy = 10#$y, tag &= retention[years]-- < 1) ))
+        # check month and year retention when they have changed
+        (( 10#$cm != 10#$m && (cm = 10#$m, tag = (((retention[months]-- < 1) && tag) * (tag | tags[month]))) ))
+        (( 10#$cy != 10#$y && (cy = 10#$y, tag = (((retention[years]-- < 1) && tag) * (tag | tags[year]))) ))
 
         (( tag || all )) && echo $y $m $d $hms $tag
     done
