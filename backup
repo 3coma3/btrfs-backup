@@ -378,15 +378,16 @@ get_config() {
     [[ ! "$@" =~ ^[./].* ]] && {
         for location in "${config_locations[@]}"; do
             for suffix in "${config_suffixes[@]}"; do
-                file="$location/${@}${suffix}"
-                [[ -f "$file" ]] && break 2
+                file="$location/$(basename "${@}${suffix}")"
+                [[ -f "$file" ]] && {
+                    echo "$file"
+                    exit 0
+                }
             done
         done
     }
 
-    [[ ! -f "$file" ]] && error "Configuration file not found: \"$@\""
-
-    echo "$file"
+    error "Configuration file not found: \"$@\""
 }
 
 cmdline() {
