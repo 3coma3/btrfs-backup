@@ -376,23 +376,32 @@ init() {
                 sudo=$(cond $EUID sudo '')
 
                 # locations where to search for config files
-                config_locations=()
-                config_locations+=("$script_dir")
-                config_locations+=("$script_dir/config")
-                config_locations+=('.')
+                (unset config_locations 2> /dev/null) && {
+                    config_locations=()
+                    config_locations+=("$script_dir")
+                    config_locations+=("$script_dir/config")
+                    config_locations+=('.')
+                    readonly -a config_locations
+                }
 
                 # file suffixes to use when searching
-                config_suffixes=()
-                config_suffixes+=('')
-                config_suffixes+=(.conf)
-                config_suffixes+=(.cf)
+                (unset config_suffixes 2> /dev/null) && {
+                    config_suffixes=()
+                    config_suffixes+=('')
+                    config_suffixes+=(.conf)
+                    config_suffixes+=(.cf)
+                    readonly -a config_suffixes
+                }
 
                 # rsync progress indicator switch combos
-                rsyncflags_progress=()
-                rsyncflags_progress+=('')
-                rsyncflags_progress+=('--progress')
-                rsyncflags_progress+=('--info=progress2')
-                rsyncflags_progress+=('--info=progress2 --no-inc-recursive')
+                (unset rsyncflags_progress 2> /dev/null) && {
+                    rsyncflags_progress=()
+                    rsyncflags_progress+=('')
+                    rsyncflags_progress+=('--progress')
+                    rsyncflags_progress+=('--info=progress2')
+                    rsyncflags_progress+=('--info=progress2 --no-inc-recursive')
+                    readonly -a rsyncflags_progress
+                }
                 ;;
         esac
     done
