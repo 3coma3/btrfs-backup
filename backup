@@ -13,7 +13,7 @@ export script_name script_dir script_title script_version sudo
 
 # CONFIGURATION ----------------------------------------------------------------
 # these are "basic configuration", tune them at init()
-export -a config_locations=() config_suffixes=() rsyncflags_progress=()
+export -a config_locations config_suffixes rsyncflags_progress
 
 # defaults below can be overridden by external config and (in some cases) by
 # command line options
@@ -376,16 +376,19 @@ init() {
                 sudo=$(cond $EUID sudo '')
 
                 # locations where to search for config files
+                config_locations=()
                 config_locations+=("$script_dir")
                 config_locations+=("$script_dir/config")
                 config_locations+=('.')
 
                 # file suffixes to use when searching
+                config_suffixes=()
                 config_suffixes+=('')
                 config_suffixes+=(.conf)
                 config_suffixes+=(.cf)
 
                 # rsync progress indicator switch combos
+                rsyncflags_progress=()
                 rsyncflags_progress+=('')
                 rsyncflags_progress+=('--progress')
                 rsyncflags_progress+=('--info=progress2')
