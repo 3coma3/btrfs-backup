@@ -203,7 +203,7 @@ Commands can be specified multiple times:
   find <regex>                find snapshots whose path matches the regular expression
   remove <regex>              remove snapshots whose path matches the regular expression
   showcfg                     show the current configuration file
-  editcfg                     edit the current configuration file(needs \$EDITOR)
+  editcfg                     edit the current configuration file (needs \$EDITOR)
   dumpcfg                     show the actual configuration values in use
 
 Options can be specified multiple times, newer options override earlier ones:
