@@ -57,7 +57,7 @@ export flags_verbose='-v'
 export rsyncflags_verbose='-vv'
 
 # default index for $rsyncflags_progress
-# command line overrides: -p[n], -q (sets to 0)
+# command line overrides: -p[n], -q (unsets)
 export rsync_progress=1
 
 # character used for header lines
@@ -262,7 +262,7 @@ cmd_snap() {
     for source in "${sources[@]}"; do
         msg "\nBacking up $source ..."
         readarray -t rsyncfilters< <(sed '/^$/d' <<< "${filters["$source"]}")
-        $dryrun rsync $rsyncflags $rsyncflags_verbose ${rsyncflags_progress[$rsync_progress]} --filter="-/s $destination" "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
+        $dryrun rsync $rsyncflags $rsyncflags_verbose ${rsyncflags_progress[${rsync_progress:-0}]} --filter="-/s $destination" "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
     done
 }
 
@@ -480,7 +480,7 @@ EOF
                 fi
                 ;;
 
-            -@(q|-quiet)) flags_verbose='' rsyncflags_verbose='' rsync_progress=0
+            -@(q|-quiet)) unset flags_verbose rsyncflags_verbose rsync_progress
                 ;;
 
             -@(y|-yes)) assume_yes=1
