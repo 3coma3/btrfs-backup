@@ -20,7 +20,7 @@ export -a config_locations=() config_suffixes=() rsyncflags_progress=()
 
 # config file to use: full/relative path or just the name, in the latter case
 # the file will be searched for as specified in the config_* arrays above
-# command line override: -c
+# command line overrides: -c
 export config=''
 
 # path to a btrfs subvolume (NOT a root volume), for snapshot storage
@@ -45,14 +45,14 @@ export rotate_handler=remove
 export weekstart=7
 
 # prefix for commands in dryrun mode
-# command line override: -d (sets to 'msg')
+# command line overrides: -d (sets to 'msg')
 export dryrun=''
 
 # recommended rsync flags, tune as needed (-q sets $rsyncflags_verbose to '')
 export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force --human-readable'
 
 # flags for verbose mode in commands
-# command line override: -q (unsets)
+# command line overrides: -q (unsets)
 export flags_verbose='-v'
 export rsyncflags_verbose='-vv'
 
@@ -197,17 +197,22 @@ Usage: $script_name -h | help
   -h, help                  show this help
 
 Commands can be specified multiple times:
-  snap                      take a snapshot
-  rotate                    apply retention policy on old snapshots
-  test <n>                  test retention policy, simulating n random snapshots
-  find <regex>              find snapshots whose path matches the regular expression
-  remove <regex>            remove snapshots whose path matches the regular expression
+  snap                        take a snapshot
+  rotate                      apply retention policy on old snapshots
+  test <n>                    test retention policy, simulating n random snapshots
+  find <regex>                find snapshots whose path matches the regular expression
+  remove <regex>              remove snapshots whose path matches the regular expression
 
-Options can be specified multiple times, only the last one is taken into account:
-  -c file                   configuration file to use, must exist in the same directory as this script
-  -d                        dry-run mode - only show what commands would be issued
-  -q                        be less verbose
-  -y                        automatically accept confirmations (be careful!)
+Options can be specified multiple times, newer options override earlier ones:
+  -c <file>, --config=<file>  configuration file to use
+  -d, --dry-run               dry-run mode - only show what commands would be issued
+  -p[n], --progress[=<n>]     choose rsync progress indicator:
+                                  n=0: don't show progress
+                                  n=1: use "--progress" for per-file progress (default)
+                                  n=2: use "--info=progress2" for overall progress
+                                  n=3: use "--info=progress2 --no-inc-recursive"
+  -q, --quiet                 be less verbose (also sets -p0)
+  -y, --yes                   automatically accept confirmations (be careful!)
 
 EOF
     exit 0
@@ -401,7 +406,7 @@ cmdline() {
 
             find|remove|test)
                 (( $# )) || error "Expected an argument for the \"$token\" command"
-                [[ "$token" == "test" && -n "${1//[0-9]/}" ]] &&  error "Argument for command \"$token\" must be numeric"
+                [[ "$token" == "test" && -n "${1//[0-9]/}" ]] && error "Argument for command \"$token\" must be numeric"
                 command_args[$(( ${#commands[@]} - 1 ))]="$1"
                 shift
                 ;;
@@ -416,18 +421,16 @@ EOF
                 ;;
 
             -c) (( $# )) || error 'Expected a config file name after -c'
-                export config="$1"
+                config="$1"
                 shift
                 ;;
 
-            -d) dryrun='msg'
+            --config=*)
+                config="${token#*=}"
+                [[ -z "$config" ]] && error 'Expected a config file name after --config'
                 ;;
 
-            -q) export rsyncflags_verbose=''
-                export flags_verbose=''
-                ;;
-
-            -y) assume_yes=1
+            -@(d|-dry-run)) dryrun='msg'
                 ;;
 
             -@(p*([[:digit:]])|-progress?(=*[[:digit:]])))
@@ -438,6 +441,12 @@ EOF
                 else
                     (( rsync_progress < ${#rsyncflags_progress[@]} )) || error "Argument to $token must be a number between 0 and $((${#rsyncflags_progress[@]} - 1))"
                 fi
+                ;;
+
+            -@(q|-quiet)) flags_verbose='' rsyncflags_verbose='' rsync_progress=0
+                ;;
+
+            -@(y|-yes)) assume_yes=1
                 ;;
 
             -*) error "Invalid option: $token"
