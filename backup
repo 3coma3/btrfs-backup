@@ -453,4 +453,4 @@ EOF
 
 init basics
 msg "$script_title $script_version\n"
-cmdline $@
+cmdline "$@"
