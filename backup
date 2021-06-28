@@ -191,7 +191,7 @@ rotate_btrfs_send() {
 # USER COMMANDS ----------------------------------------------------------------
 cmd_help() {
     msg <<EOF
-Usage: $script_name -h | help
+Usage: $script_name -h | --help
        $script_name [COMMAND|OPTION]...
 
   -h, --help                  show this help
