@@ -194,7 +194,7 @@ cmd_help() {
 Usage: $script_name -h | help
        $script_name [COMMAND|OPTION]...
 
-  -h, help                  show this help
+  -h, --help                  show this help
 
 Commands can be specified multiple times:
   snap                        take a snapshot
@@ -411,7 +411,7 @@ cmdline() {
                 shift
                 ;;
 
-            -h|help)
+            -@(h|-help))
                 (( numtokens > 1 )) && error <<EOF
 Extra tokens on command line: ${@//${token}/}
 "$token" must be passed alone, ie: $script_name $token
