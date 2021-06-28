@@ -67,7 +67,7 @@ The `--config` option overrides this variable
 
 `destination`
 
-This is an (absolute) path to a btrfs subvolume. The script will attempt to create it if it doesn't exist. Note that by default this location is omitted from backups, although this can be overridden with an rsync filter rule consisting of a ! (bang) character, ie, the [List Clearing Filter Rule](https://man7.org/linux/man-pages/man1/rsync.1.html#LIST-CLEARING_FILTER_RULE).
+This is an absolute or relative path to a btrfs subvolume. The script will attempt to create it if it doesn't exist. Note that by default this location is omitted from backups, although this can be overridden with an rsync filter rule consisting of a ! (bang) character, ie, the [List Clearing Filter Rule](https://man7.org/linux/man-pages/man1/rsync.1.html#LIST-CLEARING_FILTER_RULE).
 
 
 `sources`
