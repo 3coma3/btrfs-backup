@@ -1,16 +1,19 @@
 # User manual
 
 
+
 ## Installation
 
 The script is contained in the file `backup` in this repo. You'll want to give it proper ownership, execution permissions, and have it in your `PATH` (or invoke it with some path, as you prefer). Running from a symbolic link is supported, the script will detect its real location.
+
+
 
 
 ## Configuration
 
 Configuration variables are declared in the `CONFIG DECLARATION AND DEFAULTS` section at the top of the script. This is also where any defaults may be set.
 
-Custom configuration files can be used to provide the variables, and will override any defaults defined above. The configuration file to use can be specified in the `config` variable or by passing the `-c` option to the script (see below for details).
+Custom configuration files can be used to provide the variables, and will override any defaults defined above. The configuration file to use can be specified in the `config` variable or by passing the `--config` option to the script (see below for details).
 
 The configuration files are useful to define different backup applications. As examples, I provide two that I've used at my laptop, you can find them under the `/config` subdirectory:
 
@@ -27,11 +30,13 @@ Defines home directory snapshots (also stored under $HOME) that I issue hourly v
 > Configuration files override the variables defined in the script, and command line options (where applicable) take precedence over both the configuration files and the script defaults.
 
 
+
+
 ### Configuration variables
 
 `config_locations`
 
-This array holds the locations where a configuration file (specified by the `config` variable or by using the `-c` option), is to be searched when only a file name was specified, with no directory information.
+This array holds the locations where a configuration file (specified by the `config` variable or by using `--config`), is to be searched when only a file name was specified, with no directory information.
 
 It defaults to these locations:
 
@@ -57,12 +62,12 @@ Together these two arrays allow to choose a specific configuration file by path,
 
 This can hardcode the configuration file to use. It can be a full path, a relative path or a "naked file name", without path information, to be searched as described above.
 
-The `-c` option overrides this variable
+The `--config` option overrides this variable
 
 
 `destination`
 
-This is an (absolute) path to a btrfs subvolume. The script will attempt to create it if it doesn't exist. Note that by default this location is omitted from backups, although this can be overridden with an rsync filter rule consisting of a ! (bang) character, ie, the List Clearing Filter Rule.
+This is an (absolute) path to a btrfs subvolume. The script will attempt to create it if it doesn't exist. Note that by default this location is omitted from backups, although this can be overridden with an rsync filter rule consisting of a ! (bang) character, ie, the [List Clearing Filter Rule](https://man7.org/linux/man-pages/man1/rsync.1.html#LIST-CLEARING_FILTER_RULE).
 
 
 `sources`
@@ -91,16 +96,15 @@ This would include any file or subdirectory under /home/user, that starts with t
 ```
 This is a complex expression that illustrates nesting
 
-Full documentation of the syntax is available in the bash man page, or easily found around the web (I recommend the reference at the [Wooledge Wiki](https://mywiki.wooledge.org/glob), or the Bash Hacker's Wiki).
+Full documentation of the syntax is available in the bash [man page](https://man7.org/linux/man-pages/man1/bash.1.html), or easily found around the web (I recommend the reference at the [Wooledge Wiki](https://mywiki.wooledge.org/glob), or the [Bash Hacker's Wiki](https://wiki.bash-hackers.org/syntax/pattern)).
 
 Similar examples are already included in the provided configurations (and those are in fact paths I regularly make backups of). It isn't necessary though to put each and every item you want to backup in the `sources` list. It's better to list there only the *top level* items, and then use the `filters` array to refine what's included and excluded.
-
 
 `filters`
 
 This is an associative array, whose keys may include any *value* in the `sources` array.
 
-When backing up a `sources` entry, the matching `filters` entry is passed to rsync. The value portion of a `filters` entry is a multiline string where each line begins with "-" to exclude an item or "+" to force inclusion. The full documentation for the filters behavior is available in the rsync manual. You can also check out some filters in the included sample configurations, they are pretty simple to use.
+When backing up a `sources` entry, the matching `filters` entry is passed to rsync. The value portion of a `filters` entry is a multiline string where each line begins with "-" to exclude an item or "+" to force inclusion. The full documentation for the filters behavior is available in the rsync [manual](https://man7.org/linux/man-pages/man1/rsync.1.html#INCLUDE/EXCLUDE_PATTERN_RULES). You can also check out some filters in the included sample configurations, they are pretty simple to use.
 
 
 `retention`
@@ -133,23 +137,54 @@ You'll probably be using this variable dynamically, through the `-d` command lin
 
 These are the recommended rsync flags used when updating a snapshot. Tune as needed.
 
-
 `flags_verbose`
 
-These are the flags that control verbosity for most commands that are used by the script. They are turned off with the `-q` switch.
-
+These are the flags that control verbosity for most commands that are used by the script. They are turned off with the `--quiet` option.
 
 `rsyncflags_verbose`
 
-Same as above, but specifically for rsync (as it has many options for verbosity). This is good to control the script output when using long rsync updates. It's also turned off with `-q`.
+Same as above, but specifically for rsync (as it has many options for verbosity). This is good to control the script output when using long rsync updates. It's also turned off with `--quiet`.
 
+`rsyncflags_progress`
+
+Like with the config-file related arrays, this one is only exported in the config section, and you can tune it at the `init()` function near the end of the script.
+
+This array holds different switch combinations that control the four different options that rsync offers to show a progress indicator:
+
+* don't show any progress indicator
+* show per-file progress
+* show overall progress[^1]
+* show overall progress, aided by precomputing the transfer list[^2] (instead of recursive, on-the fly list computing as it traverses source directories) - this helps in giving a slightly more accurate progress, at the cost of an initial pass to populate the list
+
+[^1]: starting with [version 3.1.0](https://download.samba.org/pub/rsync/NEWS#3.1.0)
+[^2]: starting with [version 3.0.0](https://download.samba.org/pub/rsync/NEWS#3.0.0)
+
+`rsync_progress`
+
+This variable is used to choose the progress indicator, and should hold the index of the desired entry in `rsyncflags_progress`. As progress reporting counts as a form of verbosity, the `--quiet` option sets this variable to 0 (which disables progress reporting). You can still have quiet output along with a progress indicator: just pass a `--progress` option *after* `--quiet` (see the Options section for details).
+
+The default is 1, to show a per-file progress.
+
+> **Notes**
+>
+> 1. The degree of precision in an overall progress report is usually not 100% perfect, because it depends on whether delta transfers are in use (the deltas are not calculated even with a precomputed transfer list).
+>
+> 2. If you are using custom rsync flags that differ from the defaults provided in the script, take into account the following extract from the rsync [man page](https://man7.org/linux/man-pages/man1/rsync.1.html#OPTIONS):
+>
+>    "Some options require rsync to know the full file list, so these options disable the incremental recursion mode. These include: --delete-before, --delete-after, --prune-empty-dirs, and --delay-updates. Because of this, the default delete mode when you specify --delete is now --delete-during when both ends of the connection are at least 3.0.0 (use --del or --delete-during to request this improved deletion mode explicitly). See also the --delete-delay option that is a better choice than using --delete-after."
 
 `header_char`
 
-The character used as filler for the header lines that are output by the script.
+This lets you choose the character used as filler for the header lines that are output by the script.
+
+
 
 
 ##  Invocation
+
+Actions are subcommands. They can be passed in an arbitrary sequence (see notes below).
+
+
 
 ### Actions
 
@@ -177,10 +212,22 @@ Will generate `n` fake snapshots with random dates, and check them against your 
 
 Will scan the snapshot storage, filtering those snapshots whose name (also, their path) matches a regular expression and printing them on the screen.
 
-
 `remove`
 
 Like `find` but instead of printing names, it will destroy the snapshots. Use with care of course.
+
+`showcfg`
+
+This command will show on standard output the contents of the currently selected configuration file, if there is one.
+
+`editcfg`
+
+This command will open the currently selected configuration file with the editor set at the `$EDITOR` environment variable, if there is a selected configuration file and `$EDITOR` is set.
+
+`dumpcfg`
+
+This command will dump on standard output the actual values of all configuration variables, and is very useful to check what are the script defaults, or what are the results of the interactions between script defaults, values defined in external configuration files, and command line arguments. The dump format is one you can use directly in `export` or `declare` statements.
+
 
 
 > **Note**
@@ -198,38 +245,53 @@ Like `find` but instead of printing names, it will destroy the snapshots. Use wi
 > `backup snap find . rotate find .`
 >
 > Will print an updated list of the snapshots after each update to the snapshot store.
->
-> and so on.
 
 
-### Command line switches ("options"):
 
-`-h`
+### Command line switches (options):
 
-An alias to `help`
+Command line options come in short (single-dash, one letter) and long (two dashes, one word) flavors. 
+
+Except for `-h` , all options can be passed multiple times, and it's up to you whether that makes sense or not. Only the last instance of an option will be used.
+
+In the case of options that affect each other, like `-p` and `-q`, the same applies: the last option you specify will have priority over the previous one.
 
 
-`-c config`
+
+`-h, --help`
+
+This option is intended to be used alone, and will display an online help
+
+`-c <config>`
+
+`--config=<config>`
 
 Configuration file to use, same logic as with the `config` variable.
 
-
-`-d`
+`-d, --dryrun`
 
 It prevents the script to perform any actual operation, making it to print the actions that would be performed on the screen instead.
 
+`-p<index>`
 
-`-q`
+`--progress=<index>`
 
-Currently, it restricts a bit the rsync output in normal situations and some other commands. In future updates the verbosity controls may become more powerful. Note that most script messages are output to standard error, so they affect its "pipeable" output to a minimum.
+This option has the same semantics as the `rsync_progress` variable. In case of a previous `-q` option (which normally turns off progress reporting), this will still show a progress report if selected.
+
+`-q, --quiet`
+
+Currently, it restricts a bit the rsync output in normal situations and some other commands. In future updates the verbosity controls may become more powerful. The script messages are printed to standard error, so they affect the "pipeable" output to a minimum.
+
+This option will turn off progress reporting as well, even if you previously selected it with `-p`. To change this behavior, invert the order of these two options (`-p` after `-q`).
+
+`-y, --yes`
+
+Assume 'yes' for questions - useful for automated invocations (so far the only command that asks a yes/no question is `remove`). Note that the script also accepts piped output from the "yes" command.
 
 
-`-y`
-
-Assume 'yes' for questions. This is useful for automated invocations. Note that the script also accepts piped output from the "yes" command.
 
 
-### Backup storage structure
+## Backup storage structure
 As you take snapshots, each one will be stored in a mixed structure composed of btrfs subvolumes and standard directories that'll look like this:
 
 ***`base`***
