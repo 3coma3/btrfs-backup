@@ -499,7 +499,7 @@ EOF
 
     init basics
 
-    [[ -n "$dryrun" ]] && msg 'DRY-RUN MODE - this is a simulation\n'
+    [[ -n "$dryrun" ]] && msg '\nDRY-RUN MODE - this is a simulationn'
 
     for cmd in ${!commands[@]}; do
         cmd_${commands[$cmd]} ${command_args[$cmd]}
