@@ -376,32 +376,26 @@ init() {
                 sudo=$(cond $EUID sudo '')
 
                 # locations where to search for config files
-                (unset config_locations 2> /dev/null) && {
-                    config_locations=()
-                    config_locations+=("$script_dir")
-                    config_locations+=("$script_dir/config")
-                    config_locations+=('.')
-                    readonly -a config_locations
-                }
+                config_locations=()
+                config_locations+=("$script_dir")
+                config_locations+=("$script_dir/config")
+                config_locations+=('.')
 
                 # file suffixes to use when searching
-                (unset config_suffixes 2> /dev/null) && {
-                    config_suffixes=()
-                    config_suffixes+=('')
-                    config_suffixes+=(.conf)
-                    config_suffixes+=(.cf)
-                    readonly -a config_suffixes
-                }
+                config_suffixes=()
+                config_suffixes+=('')
+                config_suffixes+=(.conf)
+                config_suffixes+=(.cf)
 
                 # rsync progress indicator switch combos
-                (unset rsyncflags_progress 2> /dev/null) && {
-                    rsyncflags_progress=()
-                    rsyncflags_progress+=('')
-                    rsyncflags_progress+=('--progress')
-                    rsyncflags_progress+=('--info=progress2')
-                    rsyncflags_progress+=('--info=progress2 --no-inc-recursive')
-                    readonly -a rsyncflags_progress
-                }
+                rsyncflags_progress=()
+                rsyncflags_progress+=('')
+                rsyncflags_progress+=('--progress')
+                rsyncflags_progress+=('--info=progress2')
+                rsyncflags_progress+=('--info=progress2 --no-inc-recursive')
+
+                readonly script_name script_dir script_title script_version sudo
+                readonly -a config_locations config_suffixes rsyncflags_progress 
                 ;;
         esac
     done
@@ -505,8 +499,6 @@ EOF
         msg "Using configuration file: $config"
         . "$config"
     }
-
-    init basics
 
     [[ -n "$dryrun" ]] && msg '\nDRY-RUN MODE - this is a simulationn'
 
