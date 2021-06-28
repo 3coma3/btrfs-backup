@@ -202,6 +202,9 @@ Commands can be specified multiple times:
   test <n>                    test retention policy, simulating n random snapshots
   find <regex>                find snapshots whose path matches the regular expression
   remove <regex>              remove snapshots whose path matches the regular expression
+  showcfg                     show the current configuration file
+  editcfg                     edit the current configuration file(needs \$EDITOR)
+  dumpcfg                     show the actual configuration values in use
 
 Options can be specified multiple times, newer options override earlier ones:
   -c <file>, --config=<file>  configuration file to use
@@ -333,6 +336,27 @@ cmd_test() {
     done | sort -dr | tokenize_path | check_retention --all | rotate_test
 }
 
+cmd_showcfg() {
+    header 'Configuration file contents'
+    cat "$config"
+}
+
+cmd_editcfg() {
+    header "Opening configuration file with ${EDITOR} ..."
+    [[ -z "$EDITOR" ]] && error "\$EDITOR is not defined"
+    "$EDITOR" "$config"
+}
+
+cmd_dumpcfg() {
+    header 'Current configuration values'
+
+    for configvar in config{,_{locations,suffixes}} destination sources filters \
+                     retention rotate_handler weekstart dryrun \
+                     rsync{flags{,_{verbose,progress}},_progress}; do
+        declare -p "$configvar" | sed -r 's/^declare -[^[:space:]]+ (.*$)/\1/' 2>/dev/null
+    done
+}
+
 
 # MAIN -------------------------------------------------------------------------
 init() {
@@ -400,7 +424,7 @@ cmdline() {
 
         skip_else=0
         case "$token" in
-            snap|find|remove|rotate|test)
+            snap|find|remove|rotate|test|@(show|edit|dump)cfg)
                 commands+=("$token")
                 skip_else=1
                 ;;&
