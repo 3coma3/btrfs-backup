@@ -12,9 +12,8 @@ export script_name script_dir script_title script_version sudo
 
 
 # CONFIGURATION ----------------------------------------------------------------
-# these are "basic configuration", needed to load external config files
-# tune them at init()
-export -a config_locations=() config_suffixes=()
+# these are "basic configuration", tune them at init()
+export -a config_locations=() config_suffixes=() rsyncflags_progress=()
 
 # defaults below can be overridden by external config and (in some cases) by
 # command line options
@@ -50,12 +49,16 @@ export weekstart=7
 export dryrun=''
 
 # recommended rsync flags, tune as needed (-q sets $rsyncflags_verbose to '')
-export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force'
+export rsyncflags='-aHAXER --numeric-ids --inplace --no-whole-file --delete-delay --force --human-readable'
 
 # flags for verbose mode in commands
 # command line override: -q (unsets)
 export flags_verbose='-v'
-export rsyncflags_verbose='-hvv --progress'
+export rsyncflags_verbose='-vv'
+
+# default index for $rsyncflags_progress
+# command line overrides: -p[n], -q (sets to 0)
+export rsync_progress=1
 
 # character used for header lines
 export header_char='~'
@@ -251,7 +254,7 @@ cmd_snap() {
     for source in "${sources[@]}"; do
         msg "\nBacking up $source ..."
         readarray -t rsyncfilters< <(sed '/^$/d' <<< "${filters["$source"]}")
-        $dryrun rsync $rsyncflags $rsyncflags_verbose --filter="-/s $destination" "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
+        $dryrun rsync $rsyncflags $rsyncflags_verbose ${rsyncflags_progress[$rsync_progress]} --filter="-/s $destination" "${rsyncfilters[@]/#/--filter=}" "$source" "$destination/$serial/"
     done
 }
 
@@ -353,6 +356,11 @@ init() {
                 config_suffixes+=(.conf)
                 config_suffixes+=(.cf)
 
+                # rsync progress indicator switch combos
+                rsyncflags_progress+=('')
+                rsyncflags_progress+=('--progress')
+                rsyncflags_progress+=('--info=progress2')
+                rsyncflags_progress+=('--info=progress2 --no-inc-recursive')
                 ;;
         esac
     done
@@ -420,6 +428,16 @@ EOF
                 ;;
 
             -y) assume_yes=1
+                ;;
+
+            -@(p*([[:digit:]])|-progress?(=*[[:digit:]])))
+                rsync_progress=${token##-@(p|-progress?(=))}
+                token=${token%%?(=)${rsync_progress}*}
+                if [[ -z "$rsync_progress" ]]; then
+                    rsync_progress=1
+                else
+                    (( rsync_progress < ${#rsyncflags_progress[@]} )) || error "Argument to $token must be a number between 0 and $((${#rsyncflags_progress[@]} - 1))"
+                fi
                 ;;
 
             -*) error "Invalid option: $token"
