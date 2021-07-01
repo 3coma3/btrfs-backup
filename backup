@@ -325,13 +325,12 @@ cmd_test() {
         (( y = RANDOM % (yr + 1) + $(date +%Y) - yr, m = RANDOM % 12 + 1 ))
         (( leapfeb = ! (y % 4 || ! y % 100 && y % 400) && m == 2 ))
         (( d = RANDOM % (daysmonth[m - 1] + leapfeb) + 1 ))
-        (( h = RANDOM % 23 + 1, mi = RANDOM % 59 + 1 ))
+        (( h = RANDOM % 23 + 1, mi = RANDOM % 59 + 1 , s = RANDOM % 59 + 1 ))
 
-        new="$(printf "%02d/%02d/%02d/%02d%02d" $y $m $d $h $mi)"
+        new="$(printf "%02d/%02d/%02d/%02d%02d%02d" $y $m $d $h $mi $s)"
         [[ -z "${results[$new]:-}" ]] && {
-            results[$new]=''
+            (( results[$new] = count-- ))
             echo "$destination/$new"
-            (( count-- ))
         }
     done | sort -dr | tokenize_path | check_retention --all | rotate_test
 }
