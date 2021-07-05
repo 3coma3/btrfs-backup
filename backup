@@ -40,9 +40,9 @@ export -A retention=( [leafs]=15 [days]=30 [weeks]=24 [months]=12 [years]=5 )
 # so far only "test" and "remove" are implemented
 export rotate_handler=remove
 
-# used in the weekly retention checks, can be 1/s/sun/sunday or 7/m/mon/monday
-# case insensitive
-export weekstart=monday
+# first day of the week, used in the weekly retention checks
+# case insensitive: can be 1/monday or 7/sunday
+export weekstart=sunday
 
 # prefix for commands in dryrun mode
 # command line overrides: -d (sets to 'msg')
@@ -122,8 +122,8 @@ check_retention() {
     local rest y m d hms cd=0 cw lw=0 weekfmt cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
 
     case "${weekstart,,}" in
-        @(1|m?(on?(day)))) weekfmt='%Y%V';;
-        @(7|s?(un?(day)))) weekfmt='%Y%U';;
+        @(1|monday)) weekfmt='%Y%V';;
+        @(7|sunday)) weekfmt='%Y%U';;
         *) error "Invalid setting for \$weekstart: '$weekstart'. Aborting" ;;
     esac
 
@@ -136,6 +136,7 @@ check_retention() {
         # check retention when the day has changed
         (( 10#$cd != 10#$d && (cd = 10#$d, tag &= retention[days]-- < 1) ))
 
+        # check week retention when it changes
         cw=$(date -d "$y/$m/$d" +"$weekfmt")
         (( $lw != $cw && (lw = cw, tag &= retention[weeks]-- < 1) ))
 
