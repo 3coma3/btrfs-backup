@@ -40,9 +40,9 @@ export -A retention=( [leafs]=15 [days]=30 [weeks]=24 [months]=12 [years]=5 )
 # so far only "test" and "remove" are implemented
 export rotate_handler=remove
 
-# used in the weekly retention checks
-# 1=mon, 7=sun
-export weekstart=7
+# used in the weekly retention checks, can be 1/s/sun/sunday or 7/m/mon/monday
+# case insensitive
+export weekstart=monday
 
 # prefix for commands in dryrun mode
 # command line overrides: -d (sets to 'msg')
@@ -119,7 +119,13 @@ tokenize_path() {
 # filter tokenize_path-style input, tagging lines along per $retention policy
 # with --all it outputs everything, instead of only tagged lines
 check_retention() {
-    local rest y m d hms cd=0 lw='' cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
+    local rest y m d hms cd=0 cw lw=0 weekfmt cm=0 cy=0 tag=0 all=$(expr "$1" == '--all')
+
+    case "${weekstart,,}" in
+        @(1|m?(on?(day)))) weekfmt='%Y%V';;
+        @(7|s?(un?(day)))) weekfmt='%Y%U';;
+        *) error "Invalid setting for \$weekstart: '$weekstart'. Aborting" ;;
+    esac
 
     msg "Policy: keep the last ${retention[leafs]} leafs, ${retention[days]} days, ${retention[weeks]} weeks, ${retention[months]} months and ${retention[years]} years\n"
 
@@ -130,13 +136,8 @@ check_retention() {
         # check retention when the day has changed
         (( 10#$cd != 10#$d && (cd = 10#$d, tag &= retention[days]-- < 1) ))
 
-        # if we are more than 6 days before the previous last day of week, then
-        # check the week retention, as this is a different week
-        [[ -n "$lw" ]] && (( $(date -d "$lw UTC" +%s) - $(date -d "$y/$m/$d UTC" +%s) / (60 * 60 * 24) > 6 )) \
-        && (( tag &= retention[weeks]-- < 1 ))
-
-        # get last day of week for this snapshot's date, check at next iteration
-        lw=$(date -d "$y/$m/$d -$(date -d $y/$m/$d +%u) days +$weekstart day" +'%F')
+        cw=$(date -d "$y/$m/$d" +"$weekfmt")
+        (( $lw != $cw && (lw = cw, tag &= retention[weeks]-- < 1) ))
 
         # check month and year retention when they change
         (( 10#$cm != 10#$m && (cm = 10#$m, tag &= retention[months]-- < 1) ))
@@ -394,7 +395,7 @@ init() {
                 rsyncflags_progress+=('--info=progress2 --no-inc-recursive')
 
                 readonly script_name script_dir script_title script_version sudo
-                readonly -a config_locations config_suffixes rsyncflags_progress 
+                readonly -a config_locations config_suffixes rsyncflags_progress
                 ;;
         esac
     done
