@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.5.1](https://github.com/3coma3/btrfs-backup/compare/v1.5.0...v1.5.1) (2021-07-06)
+
+
+### Bug Fixes
+
+* bug in week retention checks ([06caa4f](https://github.com/3coma3/btrfs-backup/commit/06caa4fb7ca6c1628dfc8e18c28cc5254877adc8)), closes [#25](https://github.com/3coma3/btrfs-backup/issues/25)
+* bugs in cmd_test() ([c3f6db0](https://github.com/3coma3/btrfs-backup/commit/c3f6db0ce8aed9fd32a44fabf2597d8ee83c6d9f)), closes [#1](https://github.com/3coma3/btrfs-backup/issues/1) [#2](https://github.com/3coma3/btrfs-backup/issues/2)
+
+
+### Improvements
+
+* remove second init basics call ([45a0c16](https://github.com/3coma3/btrfs-backup/commit/45a0c1662029d618e2989ba7b9dac49d905f6fb7))
+* use readonly for init basics ([161a13e](https://github.com/3coma3/btrfs-backup/commit/161a13eb7170eb81f9dcea1470af8235cc85ded3))
+
 ## [1.5.0](https://github.com/3coma3/btrfs-backup/compare/v1.4.3...v1.5.0) (2021-06-28)
 
 
