@@ -125,7 +125,9 @@ As stated above, this variable specifies what to do when a retention check decid
 
 `weekstart`
 
-This is used by the retention policy checks and should be set to whatever is the first day of the week where you live. Here 1 means monday, and 7 means sunday.
+This is used by the retention policy checks and should be set to whatever is the first day of the week where you live. Options are "monday" or "sunday" (case insensitive).
+
+This variable used to accept the values 1 (meaning monday) or 7 (meaning sunday), and it still does, for compatibility with configurations using these values. It's recommended to switch to the string values for new configurations, as the numbers are likely to be phased out in some future version.
 
 
 `dryrun`
